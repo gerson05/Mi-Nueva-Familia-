@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import shutil
 import unicodedata
+import json
 from datetime import datetime
 
 import pythoncom
@@ -34,10 +35,24 @@ def normalize(text):
         return ""
     return "".join(c for c in unicodedata.normalize('NFD', str(text)) if unicodedata.category(c) != 'Mn').lower().strip()
 
-def find_sponsor_folder(sponsor_name):
+CONFIG_FILE = "config.json"
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def save_config(config_data):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(config_data, f, ensure_ascii=False, indent=4)
+
+def find_sponsor_folder(sponsor_name, base_path):
     """Busca la carpeta del patrocinador en Troncal e Inactivos."""
-    base_path = r"c:\Users\gdjhb.GERSON\Downloads\proyecto mnf\TRONCAL-MI NUEVA FAMILIA"
-    if not os.path.exists(base_path):
+    if not base_path or not os.path.exists(base_path):
         return None
 
     search_name = normalize(sponsor_name)
@@ -58,9 +73,9 @@ def find_sponsor_folder(sponsor_name):
 
     return None
 
-def find_existing_sponsorship_year(sponsor_name):
+def find_existing_sponsorship_year(sponsor_name, base_path):
     """Busca la subcarpeta PATROCINIO más reciente en CONSIGNACIONES y retorna el rango."""
-    sponsor_folder = find_sponsor_folder(sponsor_name)
+    sponsor_folder = find_sponsor_folder(sponsor_name, base_path)
     if sponsor_folder:
         consig_path = os.path.join(sponsor_folder, "CONSIGNACIONES")
         if os.path.exists(consig_path):
@@ -113,10 +128,10 @@ def parse_date_from_excel(val):
         pass
     return None
 
-def default_sponsorship_year(row):
+def default_sponsorship_year(row, base_path):
     """Genera el rango de patrocinio basado en la carpeta existente o en las fechas de Excel."""
     # 1. Intentar obtener el nombre de la carpeta PATROCINIO ya existente
-    existing_year = find_existing_sponsorship_year(str(row.get('Patrocinador', '')))
+    existing_year = find_existing_sponsorship_year(str(row.get('Patrocinador', '')), base_path)
     if existing_year:
         return existing_year
 
@@ -168,27 +183,123 @@ st.markdown('<h1 class="main-header">📄 Generador Automático de Recibos</h1>'
 api_key = "AIzaSyAn6_EZ15kl1Li0ikb9MtlX5qWaWIJbNSk"
 
 # -----------------------------------------------------
+# CONFIGURACIÓN DE RUTAS Y SEDES
+# -----------------------------------------------------
+config = load_config()
+
+with st.expander("⚙️ Configuración del Sistema", expanded=not (bool(config.get("excel_path")) and bool(config.get("base_folder")))):
+    st.markdown("Por favor verifica las rutas en tu computador local antes de generar recibos. Estas se guardarán automáticamente para la próxima vez.")
+    
+    if "tmp_excel" not in st.session_state: st.session_state.tmp_excel = config.get("excel_path", "TRANSACCIONES MI NUEVA FAMILIA VALLE 2026 .xlsx")
+    if "tmp_base" not in st.session_state: st.session_state.tmp_base = config.get("base_folder", "")
+    if "tmp_template" not in st.session_state: st.session_state.tmp_template = config.get("template_path", "118673 - VILMA BEJARANO_FEB 2026.docx")
+
+    c1, c2 = st.columns([5,1])
+    with c1:
+        st.session_state.tmp_excel = st.text_input("Ruta al archivo Excel (Base de datos):", value=st.session_state.tmp_excel)
+    with c2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("📂 Buscar", key="btn_ex"):
+            import subprocess, sys
+            script = "import tkinter as tk, tkinter.filedialog as fd; root=tk.Tk(); root.withdraw(); root.wm_attributes('-topmost', 1); print(fd.askopenfilename(filetypes=[('Excel', '*.xlsx *.xls')]))"
+            res = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True).stdout.strip()
+            if res and res != "None":
+                st.session_state.tmp_excel = res
+                st.rerun()
+
+    c1, c2 = st.columns([5,1])
+    with c1:
+        st.session_state.tmp_base = st.text_input("Carpeta Principal de su Zona (ej: TRONCAL-MI NUEVA FAMILIA):", value=st.session_state.tmp_base)
+    with c2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("📂 Buscar", key="btn_base"):
+            import subprocess, sys
+            script = "import tkinter as tk, tkinter.filedialog as fd; root=tk.Tk(); root.withdraw(); root.wm_attributes('-topmost', 1); print(fd.askdirectory())"
+            res = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True).stdout.strip()
+            if res and res != "None":
+                st.session_state.tmp_base = res
+                st.rerun()
+
+    c1, c2 = st.columns([5,1])
+    with c1:
+        st.session_state.tmp_template = st.text_input("Ruta de la Plantilla de Formato Word:", value=st.session_state.tmp_template)
+    with c2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("📂 Buscar", key="btn_temp"):
+            import subprocess, sys
+            script = "import tkinter as tk, tkinter.filedialog as fd; root=tk.Tk(); root.withdraw(); root.wm_attributes('-topmost', 1); print(fd.askopenfilename(filetypes=[('Word', '*.docx')]))"
+            res = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True).stdout.strip()
+            if res and res != "None":
+                st.session_state.tmp_template = res
+                st.rerun()
+
+    if st.button("Guardar Configuración Local"):
+        new_excel = st.session_state.tmp_excel
+        new_base_folder = st.session_state.tmp_base
+        new_template = st.session_state.tmp_template
+        if not os.path.exists(new_excel):
+            st.error("El archivo Excel no existe en la ruta proporcionada.")
+        elif not os.path.exists(new_base_folder):
+            st.error("La carpeta base proporcionada no existe.")
+        elif not os.path.exists(new_template):
+            st.error("El archivo de plantilla Word no existe.")
+        else:
+            save_config({
+                "excel_path": new_excel,
+                "base_folder": new_base_folder,
+                "template_path": new_template
+            })
+            st.success("Configuración actualizada correctamente.")
+            st.rerun()
+
+if not config.get("excel_path") or not os.path.exists(config.get("excel_path")) or not os.path.exists(config.get("base_folder")):
+    st.warning("Debes configurar primero rutas válidas en el panel superior (⚙️ Configuración del Sistema) para poder continuar.")
+    st.stop()
+
+# Leer zonas únicas desde la base de datos maestra
+excel_path = config["excel_path"]
+try:
+    # Se extrae de la pestaña maestra "Copia de BD PATROCINADORES CONF"
+    df_preview = pd.read_excel(excel_path, sheet_name="Copia de BD PATROCINADORES CONF", header=1)
+    df_preview.columns = df_preview.columns.str.strip().str.replace('\n', ' ')
+    
+    col_municipio = 'MUNICIPIO/ FORO' if 'MUNICIPIO/ FORO' in df_preview.columns else ('MUNICIPIO/FORO' if 'MUNICIPIO/FORO' in df_preview.columns else None)
+    
+    if col_municipio:
+        # Extraer zonas únicas ordenadas, omitiendo vacíos o 'nan'
+        available_zones = sorted([z for z in df_preview[col_municipio].dropna().unique() if str(z).strip() and str(z).lower() != 'nan'])
+    else:
+        available_zones = ["CALI - TRONCAL", "CALI - CAMBULOS", "CALI - PACARÁ"] # Fallback
+except Exception as e:
+    st.error(f"Error al analizar el archivo Excel configurado: {e}")
+    st.stop()
+
+selected_zone = st.selectbox("Selecciona la Sede / Zona a administrar:", available_zones)
+
+# -----------------------------------------------------
 # CARGA DE DATOS EXCEL
 # -----------------------------------------------------
 @st.cache_data(show_spinner="Cargando base de datos de patrocinadores...")
-def load_data():
-    file_path = "TRANSACCIONES MI NUEVA FAMILIA VALLE 2026 .xlsx"
-    df = pd.read_excel(file_path, sheet_name="Copia de BD PATROCINADORES CONF", header=1)
+def load_data(path, zone_filter):
+    df = pd.read_excel(path, sheet_name="Copia de BD PATROCINADORES CONF", header=1)
     df.columns = df.columns.str.strip().str.replace('\n', ' ')
-    try:
-        df_filtered = df[df['MUNICIPIO/ FORO'].astype(str).str.contains('CALI - TRONCAL', case=False, na=False)].copy()
-    except KeyError:
-        try:
-            df_filtered = df[df['MUNICIPIO/FORO'].astype(str).str.contains('CALI - TRONCAL', case=False, na=False)].copy()
-        except Exception:
-            df_filtered = df.copy()
+    
+    col_municipio = 'MUNICIPIO/ FORO' if 'MUNICIPIO/ FORO' in df.columns else ('MUNICIPIO/FORO' if 'MUNICIPIO/FORO' in df.columns else None)
+    
+    if col_municipio:
+        df_filtered = df[df[col_municipio].astype(str).str.contains(zone_filter, case=False, na=False)].copy()
+    else:
+        df_filtered = df.copy()
+
+    if 'Patrocinador' not in df_filtered.columns or 'Cédula / NIT' not in df_filtered.columns:
+        raise ValueError("Faltan columnas de 'Patrocinador' o 'Cédula / NIT' en la hoja maestra.")
     df_filtered['Dropdown_Label'] = df_filtered['Patrocinador'].astype(str) + " - CC: " + df_filtered['Cédula / NIT'].astype(str)
     return df_filtered
 
 try:
-    df_sponsors = load_data()
+    df_sponsors = load_data(excel_path, selected_zone)
 except Exception as e:
-    st.error(f"Error al cargar el archivo Excel: {e}")
+    st.error(f"Error al cargar la zona '{selected_zone}': {e}")
     st.stop()
 
 # -----------------------------------------------------
@@ -225,7 +336,7 @@ with st.container(border=True):
 
         st.markdown("### Configuración adicional para el recibo")
 
-        default_ano = default_sponsorship_year(sponsor_data)
+        default_ano = default_sponsorship_year(sponsor_data, config.get("base_folder"))
 
         c1, c2 = st.columns(2)
         with c1:
@@ -285,7 +396,7 @@ if uploaded_file is not None and selected_sponsor:
         if st.button("Generar Recibo Word", type="primary", use_container_width=True):
             with st.spinner("Creando archivo Word..."):
                 try:
-                    template_path = "118673 - VILMA BEJARANO_FEB 2026.docx"
+                    template_path = config.get("template_path", "118673 - VILMA BEJARANO_FEB 2026.docx")
                     temp_img_path = "temp_receipt.jpg"
 
                     name_parts = str(sponsor_data.get('Patrocinador', '')).strip().split()
@@ -294,8 +405,10 @@ if uploaded_file is not None and selected_sponsor:
                     output_filename = f"{short_name}-{month_abbr}.docx"
                     output_path = f"temp_{output_filename}"
 
+                    foro_name = selected_zone.split("-")[-1].strip() if "-" in selected_zone else selected_zone
+
                     context = {
-                        "foro": "EL TRONCAL",
+                        "foro": foro_name,
                         "nombre": str(sponsor_data.get('Patrocinador', '')),
                         "identificacion": str(sponsor_data.get('Cédula / NIT', '')),
                         "telefono": str(sponsor_data.get('Teléfono', '')),
@@ -344,10 +457,10 @@ if st.session_state.doc_bytes:
         )
 
     with act_col2:
-        if st.button("Guardar en Carpeta Troncal", use_container_width=True):
-            sponsor_folder = find_sponsor_folder(st.session_state.sponsor_name)
+        if st.button(f"Guardar en Carpeta ({selected_zone})", use_container_width=True):
+            sponsor_folder = find_sponsor_folder(st.session_state.sponsor_name, config.get("base_folder"))
             if not sponsor_folder:
-                st.error(f"No se encontró la carpeta de **{st.session_state.sponsor_name}** en Troncal ni Inactivos.")
+                st.error(f"No se encontró la carpeta de **{st.session_state.sponsor_name}** en la ruta base proporcionada ni en Inactivos.")
             else:
                 try:
                     # Estructura: CONSIGNACIONES / PATROCINIO [RANGO] / [MES]
