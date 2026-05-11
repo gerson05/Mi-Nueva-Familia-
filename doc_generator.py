@@ -59,7 +59,10 @@ def generate_receipt(template_path: str, output_path: str, context: dict, image_
         table._element.addprevious(spacer_p2)
         
         p = Paragraph(new_p, doc._body)
-        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        if context.get("alineacion") == "Central":
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        else:
+            p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         
         try:
             # Añadir la imagen con un alto restringido para asegurar que quepa en 1 sola página

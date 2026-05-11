@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Archivos temporales de la app
+temp_receipt*.jpg
+temp_receipt*.png
+temp_*.docx
+sheet_cache.json
+
+# Configuración local y tokens (NUNCA subir tokens)
+hf_config.json
+config.json
+
+# Logs de antecedentes (datos personales)
+antecedentes_log.json
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archivos de Excel grandes
+*.xlsx
+
+# Carpetas de patrocinadores (datos personales)
+TRONCAL-MI NUEVA FAMILIA/
+CAMBULOS-MI NUEVA FAMILIA/
