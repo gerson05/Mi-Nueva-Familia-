@@ -31,3 +31,9 @@ desktop.ini
 # Carpetas de patrocinadores (datos personales)
 TRONCAL-MI NUEVA FAMILIA/
 CAMBULOS-MI NUEVA FAMILIA/
+
+# Compilaciones portables y temporales de empaquetado
+MiNuevaFamilia-Portable/
+MiNuevaFamilia-Portable.zip
+python_embed.zip
+get-pip.py

@@ -342,6 +342,39 @@ dynamic_base_folder = get_dynamic_base_folder(selected_zone, config.get("base_fo
 # -----------------------------------------------------
 # CARGA DE DATOS EXCEL
 # -----------------------------------------------------
+
+# Nombre de la hoja de Base de Datos de Patrocinadores (hoja protegida con correos, dirección, etc.)
+BD_SHEET_NAME = ","
+
+@st.cache_data(show_spinner="Cargando datos adicionales de patrocinadores...")
+def load_bd_emails(path: str) -> pd.DataFrame:
+    """Carga correos electrónicos y datos adicionales desde la hoja BD protegida.
+
+    La hoja ',' contiene la Base de Datos maestra con columnas como:
+      Col 5: Cédula / NIT
+      Col 8: Correo Electronico
+      Col 16: Número de niños patrocinados
+    Los encabezados están en la fila 1, datos desde la fila 2+.
+    """
+    try:
+        # Leer solo las columnas necesarias: cédula (5), correo (8), num patrocinios (16)
+        read_kw = dict(
+            sheet_name=BD_SHEET_NAME, header=None,
+            skiprows=2,  # datos empiezan en fila 2 (0-indexed), saltamos filas 0 y 1
+            usecols=[5, 8, 16], dtype=str,
+        )
+        try:
+            df_bd = pd.read_excel(path, engine="calamine", **read_kw)
+        except Exception:
+            df_bd = pd.read_excel(path, engine="openpyxl", **read_kw)
+
+        df_bd.columns = ["_bd_cedula", "Correo Electronico", "NÚMERO DE PATROCINIOS"]
+        df_bd["_bd_cedula"] = df_bd["_bd_cedula"].astype(str).str.replace(r"\.0$", "", regex=True).str.strip()
+        df_bd = df_bd[df_bd["_bd_cedula"].notna() & ~df_bd["_bd_cedula"].isin(["", "nan", "None"])]
+        return df_bd
+    except Exception:
+        return pd.DataFrame(columns=["_bd_cedula", "Correo Electronico", "NÚMERO DE PATROCINIOS"])
+
 @st.cache_data(show_spinner="Cargando base de datos de patrocinadores...")
 def load_data(path: str, zone_filter: str) -> pd.DataFrame:
     """Carga patrocinadores de la hoja de zona.
@@ -469,6 +502,20 @@ def load_data(path: str, zone_filter: str) -> pd.DataFrame:
     df["Cédula / NIT"] = (
         df["Cédula / NIT"].str.replace(r"\.0$", "", regex=True).str.strip()
     )
+
+    # -- 6. Cruzar con hoja BD para obtener correo y numero de patrocinios --------
+    df_bd = load_bd_emails(path)
+    if not df_bd.empty:
+        df = df.merge(
+            df_bd, left_on="Cédula / NIT", right_on="_bd_cedula", how="left"
+        ).drop(columns=["_bd_cedula"], errors="ignore")
+
+    # Asegurar que la columna exista aunque la BD no haya cargado
+    if "Correo Electronico" not in df.columns:
+        df["Correo Electronico"] = ""
+    if "NÚMERO DE PATROCINIOS" not in df.columns:
+        df["NÚMERO DE PATROCINIOS"] = ""
+
     df["Dropdown_Label"] = df["Patrocinador"].str.strip() + " - CC: " + df["Cédula / NIT"]
     return df
 
@@ -727,7 +774,7 @@ if uploaded_file is not None and selected_sponsor:
                         "nombre": str(sponsor_data.get('Patrocinador', '')),
                         "identificacion": str(sponsor_data.get('Cédula / NIT', '')),
                         "telefono": str(sponsor_data.get('Teléfono', '')),
-                        "correo": str(sponsor_data.get('Correo Electronico', '')),
+                        "correo": "" if str(sponsor_data.get('Correo Electronico', '')).lower() in ('nan', 'none', '') else str(sponsor_data.get('Correo Electronico', '')),
                         "valor": valor_final,
                         "fecha": fecha_final,
                         "comprobante": comprobante_final,

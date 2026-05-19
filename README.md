@@ -38,6 +38,22 @@ Sistema automatizado para la gestión de recibos de patrocinio y consulta de ant
    ```
    O usa el acceso directo "Mi Nueva Familia" que se creó en tu Escritorio.
 
+## Versión Portable (Sin Instalación)
+
+Si vas a compartir la aplicación con personas que no tienen conocimientos técnicos ni Python instalado, puedes generar y enviarles una versión portable:
+
+### Para Generar el Paquete Portable (Tú, como desarrollador):
+1. Ejecuta haciendo doble click en:
+   ```
+   CREAR_PORTABLE.bat
+   ```
+2. Esto descargará automáticamente Python Portable, instalará todas las dependencias y creará un archivo comprimido llamado **`MiNuevaFamilia-Portable.zip`** en la carpeta del proyecto.
+
+### Para el Destinatario Final (Quien recibe la aplicación):
+1. **Descarga y extrae** el archivo `MiNuevaFamilia-Portable.zip`.
+2. Haz doble click en **`INICIAR.bat`** (dentro de la carpeta descomprimida). La aplicación abrirá automáticamente el navegador web y estará lista para usar. No es necesario instalar nada en el sistema.
+3. **Configuración inicial**: En la parte superior de la aplicación web, expande la sección **⚙️ Configuración del Sistema**, selecciona la carpeta donde guardas tus patrocinadores locales usando el botón **📂 Buscar** y haz click en el botón verde **Guardar Configuración Local**.
+
 ## Configuración Inicial
 
 Al abrir la aplicación por primera vez:
@@ -88,6 +104,8 @@ proyecto mnf/
 ├── launcher.py                # Lanzador de la aplicación
 ├── INSTALAR.bat               # Instalador automático
 ├── INICIAR.bat                # Lanzador de la aplicación
+├── build_portable.py          # Script de empaquetado portable
+├── CREAR_PORTABLE.bat         # Creador del paquete ZIP portable
 ├── requirements.txt           # Dependencias Python
 ├── config.json                # Configuración local (no compartir)
 ├── hf_config.json             # Token de HuggingFace (no compartir)
