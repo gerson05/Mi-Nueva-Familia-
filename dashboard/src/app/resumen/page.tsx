@@ -37,7 +37,7 @@ export default function ResumenPage() {
   const [loading, setLoading] = useState(true)
   const [totalesMes, setTotalesMes] = useState<Record<string, number>>({})
   const [totalGeneral, setTotalGeneral] = useState(0)
-  const [vista, setVista] = useState<'grilla' | 'detalle'>('detalle')
+  const [vista, setVista] = useState<'grilla' | 'detalle'>('detalle') // default: detalle
 
   useEffect(() => { cargarMetadata() }, [])
   useEffect(() => { if (zonaSeleccionada) cargarResumen() }, [zonaSeleccionada, añoSeleccionado])
@@ -67,8 +67,9 @@ export default function ResumenPage() {
     for (const a of (aportes || []) as AporteConAval[]) {
       const key = a.cedula
       if (!mapa[key]) mapa[key] = { patrocinador: a.patrocinador, cedula: a.cedula, aportesPorMes: {}, total: 0 }
-      if (!mapa[key].aportesPorMes[a.mes]) mapa[key].aportesPorMes[a.mes] = []
-      mapa[key].aportesPorMes[a.mes].push(a)
+      const mesNorm = a.mes.charAt(0).toUpperCase() + a.mes.slice(1).toLowerCase()
+      if (!mapa[key].aportesPorMes[mesNorm]) mapa[key].aportesPorMes[mesNorm] = []
+      mapa[key].aportesPorMes[mesNorm].push(a)
       const valor = parseFloat(String(a.valor).replace(/[^0-9.]/g, '')) || 0
       mapa[key].total += valor
       totMes[a.mes] = (totMes[a.mes] || 0) + valor
