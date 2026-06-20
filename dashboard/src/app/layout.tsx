@@ -30,6 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 className="px-3 py-1.5 rounded-md text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
                 Patrocinadores
               </Link>
+              <Link href="/historial"
+                className="px-3 py-1.5 rounded-md text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+                Historial Avales
+              </Link>
             </nav>
           </div>
         </header>
