@@ -385,6 +385,8 @@ export default function PatrocinadoresGestion() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [detalles, setDetalles] = useState<Record<string, DetallePat>>({})
   const [detalleLoading, setDetalleLoading] = useState<string | null>(null)
+  const [pagina, setPagina] = useState(1)
+  const POR_PAGINA = 15
 
   const cargar = useCallback(async () => {
     setLoading(true)
@@ -450,6 +452,10 @@ export default function PatrocinadoresGestion() {
     return true
   })
 
+  const totalPaginas = Math.ceil(filtrados.length / POR_PAGINA)
+  const paginaActual = Math.min(pagina, totalPaginas || 1)
+  const paginados = filtrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA)
+
   const activos = patrocinadores.filter(p => p.estado === 'activo').length
   const inactivos = patrocinadores.filter(p => p.estado === 'inactivo').length
   const porVencer = patrocinadores.filter(p => p.estado === 'activo' && getPatrocinioStatus(p.fecha_fin_patrocinio) === 'por_vencer').length
@@ -487,16 +493,16 @@ export default function PatrocinadoresGestion() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" placeholder="Buscar por nombre o cédula..."
-            value={busqueda} onChange={e => setBusqueda(e.target.value)}
+            value={busqueda} onChange={e => { setBusqueda(e.target.value); setPagina(1) }}
             className="w-full pl-9 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500" />
         </div>
-        <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value as any)}
+        <select value={filtroEstado} onChange={e => { setFiltroEstado(e.target.value as any); setPagina(1) }}
           className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
           <option value="todos">Todos</option>
           <option value="activo">Activos</option>
           <option value="inactivo">Inactivos</option>
         </select>
-        <select value={filtroZona} onChange={e => setFiltroZona(e.target.value)}
+        <select value={filtroZona} onChange={e => { setFiltroZona(e.target.value); setPagina(1) }}
           className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
           <option value="todas">Todas las zonas</option>
           {zonas.map(z => <option key={z} value={z}>{z}</option>)}
@@ -509,6 +515,7 @@ export default function PatrocinadoresGestion() {
       ) : filtrados.length === 0 ? (
         <div className="text-center py-16 text-gray-500">Sin resultados.</div>
       ) : (
+        <>
         <div className="rounded-xl border border-gray-800 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
@@ -523,7 +530,7 @@ export default function PatrocinadoresGestion() {
               </tr>
             </thead>
             <tbody>
-              {filtrados.map((p, i) => {
+              {paginados.map((p, i) => {
                 const pStatus = getPatrocinioStatus(p.fecha_fin_patrocinio)
                 const dias = p.fecha_fin_patrocinio
                   ? Math.floor((new Date(p.fecha_fin_patrocinio).getTime() - Date.now()) / 86400000)
@@ -608,6 +615,61 @@ export default function PatrocinadoresGestion() {
             </tbody>
           </table>
         </div>
+
+        {/* Paginación */}
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-xs text-gray-500">
+              {filtrados.length} patrocinadores · página {paginaActual} de {totalPaginas}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPagina(1)}
+                disabled={paginaActual === 1}
+                className="px-2 py-1 rounded text-xs text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">
+                «
+              </button>
+              <button
+                onClick={() => setPagina(p => Math.max(1, p - 1))}
+                disabled={paginaActual === 1}
+                className="px-2 py-1 rounded text-xs text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">
+                ‹
+              </button>
+              {Array.from({ length: totalPaginas }, (_, i) => i + 1)
+                .filter(n => n === 1 || n === totalPaginas || Math.abs(n - paginaActual) <= 2)
+                .reduce<(number | '...')[]>((acc, n, idx, arr) => {
+                  if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('...')
+                  acc.push(n)
+                  return acc
+                }, [])
+                .map((n, idx) => n === '...'
+                  ? <span key={`e${idx}`} className="px-1 text-xs text-gray-600">…</span>
+                  : <button key={n}
+                      onClick={() => setPagina(n as number)}
+                      className={`w-7 h-7 rounded text-xs font-medium transition-colors ${
+                        paginaActual === n
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      }`}>
+                      {n}
+                    </button>
+                )}
+              <button
+                onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                disabled={paginaActual === totalPaginas}
+                className="px-2 py-1 rounded text-xs text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">
+                ›
+              </button>
+              <button
+                onClick={() => setPagina(totalPaginas)}
+                disabled={paginaActual === totalPaginas}
+                className="px-2 py-1 rounded text-xs text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">
+                »
+              </button>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   )
