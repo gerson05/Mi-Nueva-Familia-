@@ -84,9 +84,7 @@ export default function Dashboard() {
 
     for (const ant of (antecedentes || [])) {
       const key = ant.cedula
-      if (!mapa[key]) {
-        mapa[key] = { patrocinador: ant.patrocinador, cedula: ant.cedula, zona: ant.zona, aportes: [], antecedentes: { policia: null, procuraduria: null, contraloria: null, ofac: null } }
-      }
+      if (!mapa[key]) continue
       if (!mapa[key].antecedentes[ant.fuente]) {
         mapa[key].antecedentes[ant.fuente] = ant
       }
