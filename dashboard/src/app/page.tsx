@@ -49,6 +49,7 @@ export default function Dashboard() {
   const [patrocinadores, setPatrocinadores] = useState<PatrocinadorResumen[]>([])
   const [fpMap, setFpMap] = useState<Record<string, string>>({}) // cedula -> fp_public_url
   const [busqueda, setBusqueda] = useState('')
+  const [soloPendientes, setSoloPendientes] = useState(true)
   const [loading, setLoading] = useState(true)
   const [patrocinadorAbierto, setPatrocinadorAbierto] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
@@ -184,11 +185,13 @@ export default function Dashboard() {
     setTimeout(() => setCopiado(false), 2500)
   }
 
-  const filtrados = patrocinadores.filter(p =>
-    busqueda === '' ||
-    p.patrocinador.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.cedula.includes(busqueda)
-  )
+  const filtrados = patrocinadores.filter(p => {
+    const coincideBusqueda = busqueda === '' ||
+      p.patrocinador.toLowerCase().includes(busqueda.toLowerCase()) ||
+      p.cedula.includes(busqueda)
+    const tienePendiente = p.aportes.some(a => !a.estado || a.estado === 'pendiente')
+    return coincideBusqueda && (!soloPendientes || tienePendiente)
+  })
 
   const totalVencidos = patrocinadores.reduce((acc, p) =>
     acc + FUENTES.filter(f => p.antecedentes[f] && getVigenciaStatus(p.antecedentes[f]!.fecha_vencimiento) === 'vencido').length, 0)
@@ -219,6 +222,16 @@ export default function Dashboard() {
           <option value="todas">Todas las zonas</option>
           {zonas.map(z => <option key={z} value={z}>{z}</option>)}
         </select>
+        <button
+          onClick={() => setSoloPendientes(v => !v)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap border ${
+            soloPendientes
+              ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/30'
+              : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-600'
+          }`}>
+          <Clock className="w-4 h-4" />
+          {soloPendientes ? 'Solo pendientes' : 'Todos'}
+        </button>
         <button
           onClick={generarMensajeWsp}
           className="flex items-center gap-2 px-3 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-sm transition-colors whitespace-nowrap">
