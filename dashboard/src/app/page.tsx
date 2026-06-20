@@ -47,7 +47,7 @@ export default function Dashboard() {
     const { data: antecedentes } = await qAnt
 
     const { data: zonasData } = await supabase.from('aportes').select('zona')
-    const zonasUnicas = [...new Set((zonasData || []).map((r: { zona: string }) => r.zona))].sort()
+    const zonasUnicas = [...new Set((zonasData as any[] || []).map(r => r.zona as string))].sort()
     setZonas(zonasUnicas)
 
     const mapa: Record<string, PatrocinadorResumen> = {}

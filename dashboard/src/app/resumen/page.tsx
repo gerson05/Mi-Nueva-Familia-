@@ -39,8 +39,8 @@ export default function ResumenPage() {
     const { data } = await supabase.from('aportes').select('zona, año')
     if (!data) return
 
-    const zonasUnicas = [...new Set(data.map((r: { zona: string }) => r.zona))].sort()
-    const añosUnicos = [...new Set(data.map((r: { año: string }) => r.año))].sort((a, b) => Number(b) - Number(a))
+    const zonasUnicas = [...new Set((data as any[]).map(r => r.zona as string))].sort()
+    const añosUnicos = [...new Set((data as any[]).map(r => r.año as string))].sort((a, b) => Number(b) - Number(a))
 
     setZonas(zonasUnicas)
     setAños(añosUnicos)
