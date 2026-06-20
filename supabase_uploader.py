@@ -99,6 +99,76 @@ def upload_receipt(
         return {"success": False, "error": str(e)}
 
 
+def upload_antecedente(
+    pdf_path: str,
+    zona: str,
+    patrocinador: str,
+    cedula: str,
+    fuente: str,
+    fecha_consulta: str,
+    secret_key: str,
+) -> dict:
+    """
+    Sube PDF de antecedente a Storage y registra en tabla antecedentes.
+    fuente: policia | procuraduria | contraloria | ofac
+    fecha_consulta: string YYYY-MM-DD
+    Retorna {"success": bool, "url": str, "error": str}
+    """
+    try:
+        from datetime import date, timedelta
+        sb = _client(secret_key)
+        filename = os.path.basename(pdf_path)
+        zona_clean = zona.strip().upper()
+        pat_clean = patrocinador.strip().upper()
+
+        storage_path = f"{zona_clean}/{pat_clean}-{cedula}/antecedentes/{fuente}/{filename}"
+
+        with open(pdf_path, "rb") as f:
+            sb.storage.from_(BUCKET).upload(
+                path=storage_path,
+                file=f,
+                file_options={"content-type": "application/pdf", "upsert": "true"},
+            )
+
+        public_url = sb.storage.from_(BUCKET).get_public_url(storage_path)
+
+        # Calcular vencimiento: 90 días desde consulta
+        fecha_dt = date.fromisoformat(fecha_consulta)
+        fecha_vencimiento = (fecha_dt + timedelta(days=90)).isoformat()
+
+        sb.table("antecedentes").insert({
+            "zona": zona_clean,
+            "patrocinador": pat_clean,
+            "cedula": cedula,
+            "fuente": fuente.lower(),
+            "fecha_consulta": fecha_consulta,
+            "fecha_vencimiento": fecha_vencimiento,
+            "storage_path": storage_path,
+            "public_url": public_url,
+        }).execute()
+
+        return {"success": True, "url": public_url}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def load_antecedentes_patrocinador(cedula: str, secret_key: str) -> list:
+    """Retorna antecedentes de un patrocinador ordenados por fecha desc."""
+    try:
+        sb = _client(secret_key)
+        res = (
+            sb.table("antecedentes")
+            .select("*")
+            .eq("cedula", cedula)
+            .order("fecha_consulta", desc=True)
+            .execute()
+        )
+        return res.data or []
+    except Exception:
+        return []
+
+
 def load_zone_receipts(zona: str, secret_key: str) -> list:
     """
     Retorna lista de aportes de una zona desde la tabla aportes.

@@ -1313,6 +1313,11 @@ with tab_antecedentes:
                         progress_bar.progress(1.0)
                         status_area.empty()
 
+                        # Guardar resultados en session_state para el botón de subida
+                        st.session_state["ant_resultados"] = resultados
+                        st.session_state["ant_zona"] = selected_zone
+                        st.session_state["ant_subidos"] = False
+
                         # Mostrar resultados
                         st.markdown("### Resultados")
                         for ced, info in resultados.items():
@@ -1324,9 +1329,75 @@ with tab_antecedentes:
                                         st.success(f"{fuente.title()}: {res['detalle']}")
                                     else:
                                         st.error(f"{fuente.title()}: Error - {res['detalle']}")
-                                st.info(f"Carpeta: `{carpeta}`")
 
-                        st.success("Proceso de consulta de antecedentes finalizado.")
+                                # Vista previa — listar PDFs generados con descarga
+                                st.markdown("**Documentos generados:**")
+                                pdfs_encontrados = []
+                                if os.path.isdir(carpeta):
+                                    for fname in sorted(os.listdir(carpeta)):
+                                        if fname.lower().endswith(".pdf"):
+                                            fpath = os.path.join(carpeta, fname)
+                                            fuente_doc = "policia" if "Policia" in fname else \
+                                                         "ofac" if "OFAC" in fname else \
+                                                         "contraloria" if "Contraloria" in fname else \
+                                                         "procuraduria" if "Procuraduria" in fname else "otro"
+                                            pdfs_encontrados.append((fname, fpath, fuente_doc))
+                                            with open(fpath, "rb") as _pf:
+                                                st.download_button(
+                                                    label=f"Ver / Descargar: {fname}",
+                                                    data=_pf.read(),
+                                                    file_name=fname,
+                                                    mime="application/pdf",
+                                                    key=f"dl_{ced}_{fname}",
+                                                )
+
+                        st.success("Consulta finalizada. Revisa los documentos y confirma la subida.")
+
+            # ── Botón confirmar subida a Supabase ──
+            if st.session_state.get("ant_resultados") and not st.session_state.get("ant_subidos"):
+                _sb_key = config.get("supabase_key", "").strip()
+                if _sb_key:
+                    st.markdown("---")
+                    if st.button("Confirmar y subir antecedentes a Supabase", type="primary", use_container_width=True, key="btn_subir_ant"):
+                        from supabase_uploader import upload_antecedente as _sb_ant
+                        from datetime import date
+                        _zona_ant = st.session_state["ant_zona"]
+                        _errores = []
+                        _ok = 0
+                        with st.spinner("Subiendo documentos al repositorio central..."):
+                            for _ced, _info in st.session_state["ant_resultados"].items():
+                                _nombre_r = _info["nombre"]
+                                _carpeta = _output_dir_para_patrocinador(_nombre_r)
+                                if os.path.isdir(_carpeta):
+                                    for _fname in os.listdir(_carpeta):
+                                        if not _fname.lower().endswith(".pdf"):
+                                            continue
+                                        _fuente = "policia" if "Policia" in _fname else \
+                                                  "ofac" if "OFAC" in _fname else \
+                                                  "contraloria" if "Contraloria" in _fname else \
+                                                  "procuraduria" if "Procuraduria" in _fname else None
+                                        if not _fuente:
+                                            continue
+                                        _r = _sb_ant(
+                                            pdf_path=os.path.join(_carpeta, _fname),
+                                            zona=_zona_ant,
+                                            patrocinador=_nombre_r,
+                                            cedula=_ced,
+                                            fuente=_fuente,
+                                            fecha_consulta=date.today().isoformat(),
+                                            secret_key=_sb_key,
+                                        )
+                                        if _r["success"]:
+                                            _ok += 1
+                                        else:
+                                            _errores.append(f"{_nombre_r} / {_fuente}: {_r['error']}")
+                        if _errores:
+                            st.warning(f"{_ok} documentos subidos. Errores:\n" + "\n".join(_errores))
+                        else:
+                            st.success(f"{_ok} documentos subidos al repositorio central correctamente.")
+                            st.session_state["ant_subidos"] = True
+                else:
+                    st.info("Configura la Clave Supabase para subir antecedentes al repositorio central.")
 
 with tab_revision:
     from revision_aportes import render_revision_tab
