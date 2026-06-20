@@ -73,13 +73,15 @@ export default function Dashboard() {
     const zonasUnicas = [...new Set((zonasData as any[] || []).map(r => r.zona as string))].sort()
     setZonas(zonasUnicas)
 
-    // Cargar FPs de patrocinadores (por nombre -> buscar cedula en aportes)
-    const { data: pats } = await supabase.from('patrocinadores').select('nombre, cedula, fp_public_url').not('fp_public_url', 'is', null)
+    // Cargar FPs — indexar por cedula Y nombre normalizado (sin tildes)
+    const { data: pats } = await supabase.from('patrocinadores').select('nombre, cedula, fp_public_url, fecha_inicio_patrocinio, fecha_fin_patrocinio')
     const newFpMap: Record<string, string> = {}
+    const norm = (s: string) => s.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
     for (const pat of (pats || [])) {
-      if (pat.cedula && pat.fp_public_url) newFpMap[pat.cedula] = pat.fp_public_url
-      // también indexar por nombre para match posterior
-      if (pat.nombre && pat.fp_public_url) newFpMap[`nombre:${pat.nombre.toUpperCase()}`] = pat.fp_public_url
+      const url = pat.fp_public_url
+      if (!url) continue
+      if (pat.cedula) newFpMap[pat.cedula] = url
+      if (pat.nombre) newFpMap[norm(pat.nombre)] = url
     }
     setFpMap(newFpMap)
 
@@ -302,16 +304,22 @@ export default function Dashboard() {
                   <div className="border-t border-gray-800 px-4 py-4 space-y-5">
                     {/* Formato de Postulación */}
                     {(() => {
-                      const fpUrl = fpMap[p.cedula] || fpMap[`nombre:${p.patrocinador.toUpperCase()}`]
-                      return fpUrl ? (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Formato de Postulación:</span>
-                          <a href={fpUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs underline">
-                            Ver FP <ExternalLink className="w-3 h-3" />
-                          </a>
+                      const norm = (s: string) => s.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+                      const fpUrl = fpMap[p.cedula] || fpMap[norm(p.patrocinador)]
+                      return (
+                        <div className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2">
+                          <FileText className="w-4 h-4 text-blue-400 shrink-0" />
+                          <span className="text-xs font-medium text-gray-300">Formato de Postulación</span>
+                          {fpUrl ? (
+                            <a href={fpUrl} target="_blank" rel="noopener noreferrer"
+                              className="ml-auto inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 underline shrink-0">
+                              Ver PDF <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="ml-auto text-xs text-gray-600">Sin documento</span>
+                          )}
                         </div>
-                      ) : null
+                      )
                     })()}
                     {/* Antecedentes */}
                     <div>
