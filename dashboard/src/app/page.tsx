@@ -6,15 +6,25 @@ import {
   getVigenciaStatus, getDiasRestantes,
   FUENTES, FUENTE_LABELS, STATUS_COLORS, STATUS_LABELS
 } from '@/lib/utils'
-import { FileText, AlertTriangle, ExternalLink, Search, Plus, Pencil, Trash2 } from 'lucide-react'
+import {
+  FileText, AlertTriangle, ExternalLink, Search, Plus,
+  Pencil, Trash2, CheckCircle, XCircle, Clock, MessageSquare
+} from 'lucide-react'
 import AporteModal from '@/components/AporteModal'
 import AntecedenteModal from '@/components/AntecedenteModal'
+
+type AporteConAval = Aporte & {
+  estado?: 'pendiente' | 'avalado' | 'rechazado'
+  comentario_revision?: string
+  fecha_revision?: string
+  revisor?: string
+}
 
 type PatrocinadorResumen = {
   patrocinador: string
   cedula: string
   zona: string
-  aportes: Aporte[]
+  aportes: AporteConAval[]
   antecedentes: Record<string, Antecedente | null>
 }
 
@@ -25,6 +35,14 @@ type ModalState =
   | { type: 'antecedente'; mode: 'edit'; antecedente: Antecedente }
   | null
 
+type RechazoState = { id: string; comentario: string } | null
+
+const ESTADO_STYLES = {
+  pendiente: { cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20', label: 'Pendiente', Icon: Clock },
+  avalado: { cls: 'bg-green-500/10 text-green-400 border-green-500/20', label: 'Avalado', Icon: CheckCircle },
+  rechazado: { cls: 'bg-red-500/10 text-red-400 border-red-500/20', label: 'Rechazado', Icon: XCircle },
+}
+
 export default function Dashboard() {
   const [zonas, setZonas] = useState<string[]>([])
   const [zonaSeleccionada, setZonaSeleccionada] = useState<string>('todas')
@@ -34,6 +52,8 @@ export default function Dashboard() {
   const [patrocinadorAbierto, setPatrocinadorAbierto] = useState<string | null>(null)
   const [modal, setModal] = useState<ModalState>(null)
   const [confirmDelete, setConfirmDelete] = useState<{ tipo: 'aporte' | 'antecedente'; id: string; storagePath: string } | null>(null)
+  const [rechazo, setRechazo] = useState<RechazoState>(null)
+  const [avalLoading, setAvalLoading] = useState<string | null>(null)
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -57,7 +77,7 @@ export default function Dashboard() {
       if (!mapa[key]) {
         mapa[key] = { patrocinador: a.patrocinador, cedula: a.cedula, zona: a.zona, aportes: [], antecedentes: { policia: null, procuraduria: null, contraloria: null, ofac: null } }
       }
-      mapa[key].aportes.push(a)
+      mapa[key].aportes.push(a as AporteConAval)
     }
 
     for (const ant of (antecedentes || [])) {
@@ -75,6 +95,18 @@ export default function Dashboard() {
   }, [zonaSeleccionada])
 
   useEffect(() => { cargarDatos() }, [cargarDatos])
+
+  async function marcarAval(id: string, estado: 'avalado' | 'rechazado', comentario?: string) {
+    setAvalLoading(id)
+    await supabase.from('aportes').update({
+      estado,
+      comentario_revision: comentario ?? null,
+      fecha_revision: new Date().toISOString(),
+    }).eq('id', id)
+    setAvalLoading(null)
+    setRechazo(null)
+    cargarDatos()
+  }
 
   async function eliminar() {
     if (!confirmDelete) return
@@ -96,6 +128,8 @@ export default function Dashboard() {
     acc + FUENTES.filter(f => p.antecedentes[f] && getVigenciaStatus(p.antecedentes[f]!.fecha_vencimiento) === 'vencido').length, 0)
   const totalPorVencer = patrocinadores.reduce((acc, p) =>
     acc + FUENTES.filter(f => p.antecedentes[f] && getVigenciaStatus(p.antecedentes[f]!.fecha_vencimiento) === 'por_vencer').length, 0)
+  const totalPendientes = patrocinadores.reduce((acc, p) =>
+    acc + p.aportes.filter(a => !a.estado || a.estado === 'pendiente').length, 0)
 
   return (
     <div className="space-y-6">
@@ -131,17 +165,17 @@ export default function Dashboard() {
           <div className="text-2xl font-bold text-white">{patrocinadores.reduce((a, p) => a + p.aportes.length, 0)}</div>
           <div className="text-xs text-gray-400 mt-1">Aportes registrados</div>
         </div>
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-red-400">{totalVencidos}</div>
-          <div className="text-xs text-red-400/70 mt-1">IAs vencidas</div>
-        </div>
         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-yellow-400">{totalPorVencer}</div>
-          <div className="text-xs text-yellow-400/70 mt-1">Por vencer (15 días)</div>
+          <div className="text-2xl font-bold text-yellow-400">{totalPendientes}</div>
+          <div className="text-xs text-yellow-400/70 mt-1">Pendientes de aval</div>
+        </div>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+          <div className="text-2xl font-bold text-red-400">{totalVencidos + totalPorVencer}</div>
+          <div className="text-xs text-red-400/70 mt-1">IAs por atender</div>
         </div>
       </div>
 
-      {/* Tabla */}
+      {/* Lista patrocinadores */}
       {loading ? (
         <div className="text-center py-16 text-gray-500">Cargando datos...</div>
       ) : filtrados.length === 0 ? (
@@ -155,6 +189,7 @@ export default function Dashboard() {
               if (!ant) return true
               return getVigenciaStatus(ant.fecha_vencimiento) !== 'vigente'
             })
+            const pendientes = p.aportes.filter(a => !a.estado || a.estado === 'pendiente').length
             const ctx = { patrocinador: p.patrocinador, cedula: p.cedula, zona: p.zona }
 
             return (
@@ -167,6 +202,11 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-white truncate">{p.patrocinador}</span>
                       {tieneAlerta && <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />}
+                      {pendientes > 0 && (
+                        <span className="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-medium shrink-0">
+                          {pendientes} pendiente{pendientes > 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-400 mt-0.5">CC: {p.cedula} · {p.zona}</div>
                   </div>
@@ -193,15 +233,12 @@ export default function Dashboard() {
                   <div className="border-t border-gray-800 px-4 py-4 space-y-5">
                     {/* Antecedentes */}
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Investigaciones de Antecedentes</h3>
-                      </div>
+                      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Investigaciones de Antecedentes</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {FUENTES.map(f => {
                           const ant = p.antecedentes[f]
                           const status = ant ? getVigenciaStatus(ant.fecha_vencimiento) : 'sin_registro'
                           const dias = ant ? getDiasRestantes(ant.fecha_vencimiento) : null
-
                           return (
                             <div key={f} className={`rounded-lg border p-3 ${STATUS_COLORS[status]}`}>
                               <div className="flex items-start justify-between gap-1">
@@ -249,61 +286,113 @@ export default function Dashboard() {
                         <button
                           onClick={() => setModal({ type: 'aporte', mode: 'add', contexto: ctx })}
                           className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                          <Plus className="w-3.5 h-3.5" /> Agregar aporte
+                          <Plus className="w-3.5 h-3.5" /> Agregar
                         </button>
                       </div>
                       {p.aportes.length === 0 ? (
                         <p className="text-xs text-gray-600 py-2">Sin aportes registrados.</p>
                       ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="text-xs text-gray-500 border-b border-gray-800">
-                                <th className="text-left pb-2 pr-4">Mes</th>
-                                <th className="text-left pb-2 pr-4">Año</th>
-                                <th className="text-left pb-2 pr-4">Valor</th>
-                                <th className="text-left pb-2 pr-4">Método</th>
-                                <th className="text-left pb-2 pr-4">Comprobante</th>
-                                <th className="text-left pb-2 pr-4">PDF</th>
-                                <th className="text-left pb-2">Acciones</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {p.aportes.map(a => (
-                                <tr key={a.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                                  <td className="py-2 pr-4 text-white">{a.mes}</td>
-                                  <td className="py-2 pr-4 text-gray-300">{a.año}</td>
-                                  <td className="py-2 pr-4 text-green-400 font-medium">${a.valor}</td>
-                                  <td className="py-2 pr-4 text-gray-300">{a.metodo}</td>
-                                  <td className="py-2 pr-4 text-gray-400">{a.comprobante}</td>
-                                  <td className="py-2 pr-4">
-                                    {a.public_url && (
-                                      <a href={a.public_url} target="_blank" rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs">
-                                        Ver <ExternalLink className="w-3 h-3" />
-                                      </a>
-                                    )}
-                                  </td>
-                                  <td className="py-2">
+                        <div className="space-y-2">
+                          {p.aportes.map(a => {
+                            const estado = a.estado ?? 'pendiente'
+                            const { cls, label, Icon } = ESTADO_STYLES[estado]
+                            const esRechazo = rechazo?.id === a.id
+
+                            return (
+                              <div key={a.id} className={`rounded-lg border ${cls} p-3`}>
+                                {/* Fila principal */}
+                                <div className="flex flex-wrap items-start gap-x-4 gap-y-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                                    <span className="text-xs font-semibold">{label}</span>
+                                  </div>
+                                  <span className="text-sm font-bold text-white">{a.mes} {a.año}</span>
+                                  <span className="text-sm font-bold text-green-400">${a.valor}</span>
+                                  {a.metodo && <span className="text-xs text-gray-300">{a.metodo}</span>}
+                                  {a.banco && <span className="text-xs text-gray-400">{a.banco}</span>}
+                                  {a.comprobante && <span className="text-xs text-gray-500">#{a.comprobante}</span>}
+                                  {a.fecha_aporte && <span className="text-xs text-gray-500">{a.fecha_aporte}</span>}
+                                  {a.public_url && (
+                                    <a href={a.public_url} target="_blank" rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 underline">
+                                      Ver PDF <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  )}
+                                </div>
+
+                                {/* Comentario de rechazo */}
+                                {estado === 'rechazado' && a.comentario_revision && (
+                                  <div className="mt-2 flex items-start gap-1.5 text-xs text-red-300/80">
+                                    <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
+                                    <span>{a.comentario_revision}</span>
+                                  </div>
+                                )}
+
+                                {/* Acciones de aval */}
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                  {estado !== 'avalado' && (
+                                    <button
+                                      onClick={() => marcarAval(a.id, 'avalado')}
+                                      disabled={avalLoading === a.id}
+                                      className="flex items-center gap-1 text-xs px-2.5 py-1 bg-green-600 text-white rounded-md hover:bg-green-500 disabled:opacity-50 transition-colors">
+                                      <CheckCircle className="w-3 h-3" /> Dar aval
+                                    </button>
+                                  )}
+                                  {estado !== 'rechazado' && (
+                                    <button
+                                      onClick={() => setRechazo(esRechazo ? null : { id: a.id, comentario: '' })}
+                                      disabled={avalLoading === a.id}
+                                      className="flex items-center gap-1 text-xs px-2.5 py-1 bg-red-600/80 text-white rounded-md hover:bg-red-500 disabled:opacity-50 transition-colors">
+                                      <XCircle className="w-3 h-3" /> Rechazar
+                                    </button>
+                                  )}
+                                  {estado !== 'pendiente' && (
+                                    <button
+                                      onClick={() => marcarAval(a.id, 'pendiente' as any)}
+                                      disabled={avalLoading === a.id}
+                                      className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+                                      Resetear
+                                    </button>
+                                  )}
+                                  <div className="ml-auto flex gap-2">
+                                    <button onClick={() => setModal({ type: 'aporte', mode: 'edit', aporte: a })}
+                                      title="Editar" className="text-gray-500 hover:text-blue-400 transition-colors">
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button onClick={() => setConfirmDelete({ tipo: 'aporte', id: a.id, storagePath: a.storage_path })}
+                                      title="Eliminar" className="text-gray-500 hover:text-red-400 transition-colors">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Formulario de rechazo inline */}
+                                {esRechazo && (
+                                  <div className="mt-3 space-y-2">
+                                    <textarea
+                                      value={rechazo.comentario}
+                                      onChange={e => setRechazo({ id: a.id, comentario: e.target.value })}
+                                      placeholder="Describe el error encontrado en el aporte..."
+                                      rows={2}
+                                      className="w-full bg-gray-900 border border-red-500/30 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-red-400 resize-none"
+                                    />
                                     <div className="flex gap-2">
-                                      <button
-                                        onClick={() => setModal({ type: 'aporte', mode: 'edit', aporte: a })}
-                                        title="Editar"
-                                        className="text-gray-400 hover:text-blue-400 transition-colors">
-                                        <Pencil className="w-3.5 h-3.5" />
+                                      <button onClick={() => setRechazo(null)}
+                                        className="text-xs px-3 py-1.5 bg-gray-800 text-gray-400 rounded-md hover:bg-gray-700 transition-colors">
+                                        Cancelar
                                       </button>
                                       <button
-                                        onClick={() => setConfirmDelete({ tipo: 'aporte', id: a.id, storagePath: a.storage_path })}
-                                        title="Eliminar"
-                                        className="text-gray-400 hover:text-red-400 transition-colors">
-                                        <Trash2 className="w-3.5 h-3.5" />
+                                        onClick={() => marcarAval(a.id, 'rechazado', rechazo.comentario)}
+                                        disabled={!rechazo.comentario.trim() || avalLoading === a.id}
+                                        className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-500 disabled:opacity-50 transition-colors">
+                                        Confirmar rechazo
                                       </button>
                                     </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       )}
                     </div>
@@ -326,7 +415,6 @@ export default function Dashboard() {
           contexto={modal.mode === 'add' ? modal.contexto : undefined}
         />
       )}
-
       {modal?.type === 'antecedente' && (
         <AntecedenteModal
           open
@@ -346,7 +434,7 @@ export default function Dashboard() {
           <div className="relative bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-sm w-full shadow-2xl">
             <h3 className="text-base font-semibold text-white mb-2">¿Eliminar registro?</h3>
             <p className="text-sm text-gray-400 mb-5">
-              Esta acción eliminará el registro y el archivo PDF de Supabase. No se puede deshacer.
+              Elimina el registro y el PDF de Supabase. No se puede deshacer.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setConfirmDelete(null)}
