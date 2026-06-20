@@ -15,6 +15,11 @@ export function getDiasRestantes(fechaVencimiento: string): number {
   return Math.floor((vence.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
 }
 
+export const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] as const
+
+export const METODOS_PAGO = ['Efectivo','Transferencia','Nequi','Daviplata','PSE','Cheque','Otro'] as const
+
 export const FUENTES = ['policia', 'procuraduria', 'contraloria', 'ofac'] as const
 export const FUENTE_LABELS: Record<string, string> = {
   policia: 'Policía',
