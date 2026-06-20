@@ -240,10 +240,6 @@ export default function Dashboard() {
           <div className="text-2xl font-bold text-yellow-400">{totalPendientes}</div>
           <div className="text-xs text-yellow-400/70 mt-1">Pendientes de aval</div>
         </div>
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-red-400">{totalVencidos + totalPorVencer}</div>
-          <div className="text-xs text-red-400/70 mt-1">IAs por atender</div>
-        </div>
       </div>
 
       {/* Lista patrocinadores */}
