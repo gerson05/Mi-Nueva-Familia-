@@ -47,7 +47,7 @@ export default function HistorialAval() {
       .select('id, patrocinador, cedula, zona, mes, año, valor, estado, fecha_revision, comentario_revision, public_url')
       .order('fecha_revision', { ascending: false, nullsFirst: false })
 
-    const lista = (data || []) as RegistroAval[]
+    const lista = (data || []) as unknown as RegistroAval[]
     setRegistros(lista)
     setZonas([...new Set(lista.map(r => r.zona))].sort())
     setAños([...new Set((lista as any[]).map(r => r.año as string))].sort((a, b) => Number(b) - Number(a)))
