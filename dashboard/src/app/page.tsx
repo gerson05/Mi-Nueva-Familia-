@@ -8,7 +8,7 @@ import {
 } from '@/lib/utils'
 import {
   FileText, AlertTriangle, ExternalLink, Search, Plus,
-  Pencil, Trash2, CheckCircle, XCircle, Clock, MessageSquare
+  Pencil, Trash2, CheckCircle, XCircle, Clock, MessageSquare, Send, Copy, Check
 } from 'lucide-react'
 import AporteModal from '@/components/AporteModal'
 import AntecedenteModal from '@/components/AntecedenteModal'
@@ -54,6 +54,8 @@ export default function Dashboard() {
   const [confirmDelete, setConfirmDelete] = useState<{ tipo: 'aporte' | 'antecedente'; id: string; storagePath: string } | null>(null)
   const [rechazo, setRechazo] = useState<RechazoState>(null)
   const [avalLoading, setAvalLoading] = useState<string | null>(null)
+  const [mensajeWsp, setMensajeWsp] = useState<string | null>(null)
+  const [copiado, setCopiado] = useState(false)
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -118,6 +120,59 @@ export default function Dashboard() {
     cargarDatos()
   }
 
+  function generarMensajeWsp() {
+    const zona = zonaSeleccionada === 'todas' ? 'Todas las zonas' : zonaSeleccionada
+    const fecha = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })
+
+    const avalados: string[] = []
+    const rechazados: string[] = []
+    const pendientes: string[] = []
+
+    for (const p of patrocinadores) {
+      for (const a of p.aportes) {
+        const estado = a.estado ?? 'pendiente'
+        const linea = `${p.patrocinador} (CC: ${p.cedula}) — ${a.mes} ${a.año} — $${a.valor}`
+        if (estado === 'avalado') avalados.push(`• ${linea}`)
+        else if (estado === 'rechazado') {
+          rechazados.push(`• ${linea}`)
+          if (a.comentario_revision) rechazados.push(`  _Motivo: ${a.comentario_revision}_`)
+        } else pendientes.push(`• ${linea}`)
+      }
+    }
+
+    const partes: string[] = [
+      `📋 *Revisión de Aportes — ${zona}*`,
+      `📅 ${fecha}`,
+      '',
+    ]
+    if (avalados.length) {
+      partes.push('✅ *CON AVAL:*')
+      partes.push(...avalados)
+      partes.push('')
+    }
+    if (rechazados.length) {
+      partes.push('❌ *SIN AVAL (requieren corrección):*')
+      partes.push(...rechazados)
+      partes.push('')
+    }
+    if (pendientes.length) {
+      partes.push('⏳ *PENDIENTES DE REVISIÓN:*')
+      partes.push(...pendientes)
+      partes.push('')
+    }
+    partes.push(`_Total: ${avalados.length} con aval · ${rechazados.length} sin aval · ${pendientes.length} pendientes_`)
+
+    setMensajeWsp(partes.join('\n'))
+    setCopiado(false)
+  }
+
+  async function copiarMensaje() {
+    if (!mensajeWsp) return
+    await navigator.clipboard.writeText(mensajeWsp)
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2500)
+  }
+
   const filtrados = patrocinadores.filter(p =>
     busqueda === '' ||
     p.patrocinador.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -153,6 +208,11 @@ export default function Dashboard() {
           <option value="todas">Todas las zonas</option>
           {zonas.map(z => <option key={z} value={z}>{z}</option>)}
         </select>
+        <button
+          onClick={generarMensajeWsp}
+          className="flex items-center gap-2 px-3 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-sm transition-colors whitespace-nowrap">
+          <Send className="w-4 h-4" /> Resumen WhatsApp
+        </button>
       </div>
 
       {/* Tarjetas resumen */}
@@ -425,6 +485,32 @@ export default function Dashboard() {
           contexto={modal.mode === 'add' ? modal.contexto : undefined}
           fuenteInicial={modal.mode === 'add' ? modal.fuente : undefined}
         />
+      )}
+
+      {/* Modal mensaje WhatsApp */}
+      {mensajeWsp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMensajeWsp(null)} />
+          <div className="relative bg-gray-900 border border-gray-800 rounded-xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+              <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <Send className="w-4 h-4 text-green-400" /> Resumen para WhatsApp
+              </h2>
+              <button onClick={() => setMensajeWsp(null)} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div className="px-6 py-4 space-y-3">
+              <pre className="whitespace-pre-wrap text-xs text-gray-300 bg-gray-800 rounded-lg p-4 max-h-80 overflow-y-auto font-sans leading-relaxed">
+                {mensajeWsp}
+              </pre>
+              <button
+                onClick={copiarMensaje}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium transition-colors">
+                {copiado ? <><Check className="w-4 h-4" /> ¡Copiado!</> : <><Copy className="w-4 h-4" /> Copiar mensaje</>}
+              </button>
+              <p className="text-xs text-gray-500 text-center">Pega directamente en WhatsApp — los * y _ se formatean automáticamente</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Confirmar eliminación */}
