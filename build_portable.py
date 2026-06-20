@@ -47,6 +47,7 @@ REQUIREMENTS = [
     "gspread",
     "google-auth",
     "google-api-python-client",
+    "supabase",
 ]
 
 def print_step(msg):
@@ -147,6 +148,7 @@ def main():
         "antecedentes_checker.py",
         "revision_aportes.py",
         "drive_uploader.py",
+        "supabase_uploader.py",
     ]
     for file_name in app_files:
         src = os.path.join(BASE_DIR, file_name)

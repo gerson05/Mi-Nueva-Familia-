@@ -257,6 +257,7 @@ with st.expander("⚙️ Configuración del Sistema", expanded=not (bool(config.
     if "tmp_template" not in st.session_state: st.session_state.tmp_template = config.get("template_path", "118673 - VILMA BEJARANO_FEB 2026.docx")
     if "tmp_api_key" not in st.session_state: st.session_state.tmp_api_key = config.get("api_key", "")
     if "tmp_apps_script_url" not in st.session_state: st.session_state.tmp_apps_script_url = config.get("apps_script_url", "")
+    if "tmp_supabase_key" not in st.session_state: st.session_state.tmp_supabase_key = config.get("supabase_key", "")
 
     c1, c2 = st.columns([5,1])
     with c1:
@@ -327,11 +328,11 @@ with st.expander("⚙️ Configuración del Sistema", expanded=not (bool(config.
                 st.error("No se pudo abrir el selector. Escribe la ruta manualmente.")
 
     st.session_state.tmp_api_key = st.text_input("Clave de API de Gemini (API Key):", value=st.session_state.tmp_api_key, type="password")
-    st.session_state.tmp_apps_script_url = st.text_input(
-        "URL del Apps Script de Google Sheets (opcional):",
-        value=st.session_state.tmp_apps_script_url,
-        placeholder="https://script.google.com/macros/s/.../exec",
-        help="Pega aquí la URL del Web App de Apps Script para registrar aportes automáticamente en Google Sheets."
+    st.session_state.tmp_supabase_key = st.text_input(
+        "Clave Supabase (Secret Key):",
+        value=st.session_state.tmp_supabase_key,
+        type="password",
+        help="Secret key de Supabase para subir recibos al repositorio centralizado."
     )
 
     if st.button("Guardar Configuración Local"):
@@ -340,6 +341,7 @@ with st.expander("⚙️ Configuración del Sistema", expanded=not (bool(config.
         new_template = st.session_state.tmp_template
         new_api_key = st.session_state.tmp_api_key
         new_apps_script_url = st.session_state.tmp_apps_script_url.strip()
+        new_supabase_key = st.session_state.tmp_supabase_key.strip()
         if not os.path.exists(new_excel):
             st.error("El archivo Excel no existe en la ruta proporcionada.")
         elif not os.path.exists(new_base_folder):
@@ -353,6 +355,7 @@ with st.expander("⚙️ Configuración del Sistema", expanded=not (bool(config.
                 "template_path": new_template,
                 "api_key": new_api_key,
                 "apps_script_url": new_apps_script_url,
+                "supabase_key": new_supabase_key,
             })
             st.success("Configuración actualizada correctamente.")
             st.rerun()
@@ -1046,37 +1049,43 @@ with tab_recibos:
                             with st.spinner("Convirtiendo a PDF (requiere Microsoft Word)..."):
                                 try:
                                     convert(word_save_path, pdf_save_path)
-                                    st.success(f"PDF generado y guardado exitosamente en:\n`{pdf_save_path}`")
+                                    st.success(f"PDF generado y guardado en:\n`{pdf_save_path}`")
 
-                                    # ── Subida automática a Google Drive por zona ──
-                                    _sa_drive = os.path.join(os.path.dirname(os.path.abspath(__file__)), "service_account.json")
-                                    if os.path.exists(_sa_drive):
-                                        with st.spinner(f"Subiendo recibo a Google Drive · zona {selected_zone}..."):
+                                    # ── Subida automática a Supabase ──
+                                    _sb_key = config.get("supabase_key", "").strip()
+                                    if _sb_key:
+                                        with st.spinner(f"Subiendo recibo a Supabase · zona {selected_zone}..."):
                                             try:
-                                                from drive_uploader import upload_receipt as _drive_upload
-                                                _año_d = ""
+                                                from supabase_uploader import upload_receipt as _sb_upload
+                                                _año_sb = ""
                                                 try:
-                                                    _año_d = str(fecha_final).strip().split("/")[-1].split("-")[-1][:4]
+                                                    _año_sb = str(fecha_final).strip().split("/")[-1].split("-")[-1][:4]
                                                 except Exception:
                                                     pass
-                                                _dr = _drive_upload(
+                                                _sb_r = _sb_upload(
                                                     pdf_path=pdf_save_path,
-                                                    zone=selected_zone,
-                                                    sponsor_name=str(st.session_state.sponsor_name),
+                                                    zona=selected_zone,
+                                                    patrocinador=str(st.session_state.sponsor_name),
                                                     cedula=str(sponsor_data.get("Cédula / NIT", "")).replace(".0", "").strip(),
                                                     mes=str(st.session_state.mes_final).strip().upper(),
-                                                    ano=_año_d,
-                                                    sa_file=_sa_drive,
-                                                    sheet_id="1wLzWVFWMtfI3vmHbg6vywYdvj3wCpGysqs4hG1C55Js",
+                                                    año=_año_sb,
+                                                    valor=val_base,
+                                                    metodo=metodo_excel,
+                                                    comprobante=comprobante_final,
+                                                    banco=lugar_excel,
+                                                    fecha_aporte=fecha_final,
+                                                    secret_key=_sb_key,
                                                 )
-                                                if _dr["success"]:
-                                                    st.success(f"📤 Recibo registrado en Google Drive · [Ver archivo]({_dr['url']})")
+                                                if _sb_r["success"]:
+                                                    st.success(f"Recibo subido al repositorio central. [Ver PDF]({_sb_r['url']})")
                                                 else:
-                                                    st.warning(f"Guardado local OK, pero no se pudo subir a Drive: {_dr.get('error', '')}")
+                                                    st.warning(f"Guardado local OK, pero no se pudo subir a Supabase: {_sb_r.get('error', '')}")
                                             except ImportError:
-                                                st.info("Instala `google-api-python-client` para subida automática a Drive.")
+                                                st.info("Instala `supabase` para subida automática al repositorio central.")
+                                    else:
+                                        st.info("Configura la Clave Supabase para subir al repositorio central.")
                                 except Exception as pdf_err:
-                                    st.warning(f"El archivo Word fue guardado exitosamente, pero la conversión a PDF falló. Detalles adicionales: {pdf_err}")
+                                    st.warning(f"Word guardado. Conversión a PDF falló: {pdf_err}")
                         else:
                             st.warning("El archivo Word fue guardado. La conversión automática a PDF no está disponible ('docx2pdf' no instalada) pero el proceso ha terminado.")
 
