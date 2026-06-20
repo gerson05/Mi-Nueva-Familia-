@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Search, Users, CheckCircle, XCircle, ExternalLink, AlertTriangle, Clock } from 'lucide-react'
+import { Search, Users, CheckCircle, XCircle, ExternalLink, AlertTriangle, Clock, Upload, Loader2 } from 'lucide-react'
+
+const SUPABASE_URL = 'https://xhigifzmylcaxkxzqzom.supabase.co'
+const BUCKET = 'recibos'
 
 type Patrocinador = {
   id: string
@@ -13,44 +16,32 @@ type Patrocinador = {
   estado: 'activo' | 'inactivo'
   fecha_inicio_patrocinio: string | null
   fecha_fin_patrocinio: string | null
+  fp_storage_path: string | null
   fp_public_url: string | null
   observaciones: string | null
 }
 
-function getPatrocinioStatus(fecha_fin: string | null): 'vigente' | 'por_vencer' | 'vencido' | 'sin_fecha' {
+function getPatrocinioStatus(fecha_fin: string | null) {
   if (!fecha_fin) return 'sin_fecha'
-  const hoy = new Date()
-  const fin = new Date(fecha_fin)
-  const dias = Math.floor((fin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+  const dias = Math.floor((new Date(fecha_fin).getTime() - Date.now()) / 86400000)
   if (dias < 0) return 'vencido'
   if (dias <= 30) return 'por_vencer'
   return 'vigente'
 }
 
-const PATROCINIO_STYLES = {
+const P_STYLES: Record<string, string> = {
   vigente: 'text-green-400 bg-green-500/10 border-green-500/20',
   por_vencer: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
   vencido: 'text-red-400 bg-red-500/10 border-red-500/20',
   sin_fecha: 'text-gray-500 bg-gray-800 border-gray-700',
 }
-const PATROCINIO_LABEL = {
-  vigente: 'Vigente',
-  por_vencer: 'Por vencer',
-  vencido: 'Vencido',
-  sin_fecha: 'Sin fecha',
+const P_LABEL: Record<string, string> = {
+  vigente: 'Vigente', por_vencer: 'Por vencer', vencido: 'Vencido', sin_fecha: 'Sin fecha',
 }
 
-function formatFecha(f: string | null) {
+function fmtFecha(f: string | null) {
   if (!f) return '—'
-  const d = new Date(f)
-  return d.toLocaleDateString('es-CO', { month: 'short', year: 'numeric' })
-}
-
-function diasRestantes(fecha_fin: string | null): number | null {
-  if (!fecha_fin) return null
-  const hoy = new Date()
-  const fin = new Date(fecha_fin)
-  return Math.floor((fin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+  return new Date(f).toLocaleDateString('es-CO', { month: 'short', year: 'numeric' })
 }
 
 export default function PatrocinadoresGestion() {
@@ -61,14 +52,15 @@ export default function PatrocinadoresGestion() {
   const [filtroZona, setFiltroZona] = useState<string>('todas')
   const [zonas, setZonas] = useState<string[]>([])
   const [toggleLoading, setToggleLoading] = useState<string | null>(null)
+  const [fpLoading, setFpLoading] = useState<string | null>(null)
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const cargar = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase.from('patrocinadores').select('*').order('nombre')
     const lista = (data || []) as Patrocinador[]
     setPatrocinadores(lista)
-    const zonasUnicas = [...new Set(lista.map(p => p.zona))].sort()
-    setZonas(zonasUnicas)
+    setZonas([...new Set(lista.map(p => p.zona))].sort())
     setLoading(false)
   }, [])
 
@@ -76,9 +68,21 @@ export default function PatrocinadoresGestion() {
 
   async function toggleEstado(p: Patrocinador) {
     setToggleLoading(p.id)
-    const nuevo = p.estado === 'activo' ? 'inactivo' : 'activo'
-    await supabase.from('patrocinadores').update({ estado: nuevo }).eq('id', p.id)
+    await supabase.from('patrocinadores').update({ estado: p.estado === 'activo' ? 'inactivo' : 'activo' }).eq('id', p.id)
     setToggleLoading(null)
+    cargar()
+  }
+
+  async function subirFP(p: Patrocinador, file: File) {
+    setFpLoading(p.id)
+    const nombreSafe = p.nombre.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const storagePath = `${p.zona}/patrocinadores/${nombreSafe}/FP_${nombreSafe}.pdf`
+    const { error } = await supabase.storage.from(BUCKET).upload(storagePath, file, { upsert: true, contentType: 'application/pdf' })
+    if (!error) {
+      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`
+      await supabase.from('patrocinadores').update({ fp_storage_path: storagePath, fp_public_url: publicUrl }).eq('id', p.id)
+    }
+    setFpLoading(null)
     cargar()
   }
 
@@ -99,7 +103,6 @@ export default function PatrocinadoresGestion() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <Users className="w-5 h-5 text-blue-400" />
         <h1 className="text-lg font-semibold text-white">Gestión de Patrocinadores</h1>
@@ -139,16 +142,14 @@ export default function PatrocinadoresGestion() {
           <option value="activo">Activos</option>
           <option value="inactivo">Inactivos</option>
         </select>
-        {zonas.length > 1 && (
-          <select value={filtroZona} onChange={e => setFiltroZona(e.target.value)}
-            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-            <option value="todas">Todas las zonas</option>
-            {zonas.map(z => <option key={z} value={z}>{z}</option>)}
-          </select>
-        )}
+        <select value={filtroZona} onChange={e => setFiltroZona(e.target.value)}
+          className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+          <option value="todas">Todas las zonas</option>
+          {zonas.map(z => <option key={z} value={z}>{z}</option>)}
+        </select>
       </div>
 
-      {/* Lista */}
+      {/* Tabla */}
       {loading ? (
         <div className="text-center py-16 text-gray-500">Cargando patrocinadores...</div>
       ) : filtrados.length === 0 ? (
@@ -158,7 +159,7 @@ export default function PatrocinadoresGestion() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-900 border-b border-gray-800 text-xs text-gray-400">
-                <th className="text-left px-4 py-3 sticky left-0 bg-gray-900 min-w-[220px]">Nombre</th>
+                <th className="text-left px-4 py-3 sticky left-0 bg-gray-900 min-w-[200px]">Nombre</th>
                 <th className="text-left px-3 py-3 whitespace-nowrap">Cédula</th>
                 <th className="text-left px-3 py-3 whitespace-nowrap">Zona</th>
                 <th className="text-left px-3 py-3 whitespace-nowrap">Período patrocinio</th>
@@ -170,54 +171,69 @@ export default function PatrocinadoresGestion() {
             <tbody>
               {filtrados.map((p, i) => {
                 const pStatus = getPatrocinioStatus(p.fecha_fin_patrocinio)
-                const dias = diasRestantes(p.fecha_fin_patrocinio)
+                const dias = p.fecha_fin_patrocinio
+                  ? Math.floor((new Date(p.fecha_fin_patrocinio).getTime() - Date.now()) / 86400000)
+                  : null
                 return (
-                  <tr key={p.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-900/20'} ${p.estado === 'inactivo' ? 'opacity-50' : ''}`}>
+                  <tr key={p.id}
+                    className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-900/20'} ${p.estado === 'inactivo' ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-3 sticky left-0 bg-gray-950">
                       <div className="font-medium text-white">{p.nombre}</div>
                       {p.telefono && <div className="text-xs text-gray-500">{p.telefono}</div>}
                     </td>
-                    <td className="px-3 py-3 text-gray-400 text-xs">{p.cedula || '—'}</td>
+                    <td className="px-3 py-3 text-gray-300 text-xs font-mono">
+                      {p.cedula || <span className="text-gray-600">—</span>}
+                    </td>
                     <td className="px-3 py-3 text-gray-400 text-xs whitespace-nowrap">{p.zona}</td>
                     <td className="px-3 py-3 text-xs whitespace-nowrap">
                       {p.fecha_inicio_patrocinio ? (
                         <span className="text-gray-300">
-                          {formatFecha(p.fecha_inicio_patrocinio)} → {formatFecha(p.fecha_fin_patrocinio)}
+                          {fmtFecha(p.fecha_inicio_patrocinio)} → {fmtFecha(p.fecha_fin_patrocinio)}
                         </span>
                       ) : <span className="text-gray-600">—</span>}
                     </td>
                     <td className="px-3 py-3">
                       {p.estado === 'activo' ? (
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-medium ${PATROCINIO_STYLES[pStatus]}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-medium ${P_STYLES[pStatus]}`}>
                           {pStatus === 'vencido' && <XCircle className="w-3 h-3" />}
                           {pStatus === 'por_vencer' && <AlertTriangle className="w-3 h-3" />}
                           {pStatus === 'vigente' && <CheckCircle className="w-3 h-3" />}
                           {pStatus === 'sin_fecha' && <Clock className="w-3 h-3" />}
-                          {PATROCINIO_LABEL[pStatus]}
+                          {P_LABEL[pStatus]}
                           {dias !== null && pStatus !== 'sin_fecha' && (
-                            <span className="opacity-70">
-                              {dias >= 0 ? ` (${dias}d)` : ` (${Math.abs(dias)}d ago)`}
-                            </span>
+                            <span className="opacity-70">{dias >= 0 ? ` (${dias}d)` : ` (${Math.abs(dias)}d ago)`}</span>
                           )}
                         </span>
                       ) : <span className="text-gray-600 text-xs">—</span>}
                     </td>
                     <td className="px-3 py-3">
-                      {p.fp_public_url ? (
-                        <a href={p.fp_public_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 underline">
-                          Ver <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : <span className="text-gray-600 text-xs">—</span>}
+                      <div className="flex items-center gap-2">
+                        {p.fp_public_url && (
+                          <a href={p.fp_public_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 underline whitespace-nowrap">
+                            Ver <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        <label className="cursor-pointer" title={p.fp_public_url ? 'Actualizar FP' : 'Subir FP'}>
+                          {fpLoading === p.id
+                            ? <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
+                            : <Upload className="w-3.5 h-3.5 text-gray-500 hover:text-blue-400 transition-colors" />
+                          }
+                          <input type="file" accept=".pdf" className="hidden"
+                            ref={el => { fileInputRefs.current[p.id] = el }}
+                            onChange={e => { const f = e.target.files?.[0]; if (f) subirFP(p, f) }}
+                          />
+                        </label>
+                      </div>
                     </td>
                     <td className="px-3 py-3">
                       <button
                         onClick={() => toggleEstado(p)}
                         disabled={toggleLoading === p.id}
-                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-50 ${
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-50 border ${
                           p.estado === 'activo'
-                            ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400 border border-green-500/30 hover:border-red-500/30'
-                            : 'bg-gray-800 text-gray-400 hover:bg-green-500/20 hover:text-green-400 border border-gray-700 hover:border-green-500/30'
+                            ? 'bg-green-500/20 text-green-400 hover:bg-red-500/20 hover:text-red-400 border-green-500/30 hover:border-red-500/30'
+                            : 'bg-gray-800 text-gray-400 hover:bg-green-500/20 hover:text-green-400 border-gray-700 hover:border-green-500/30'
                         }`}>
                         {toggleLoading === p.id ? '...' : p.estado === 'activo' ? 'Activo' : 'Inactivo'}
                       </button>

@@ -47,6 +47,7 @@ export default function Dashboard() {
   const [zonas, setZonas] = useState<string[]>([])
   const [zonaSeleccionada, setZonaSeleccionada] = useState<string>('todas')
   const [patrocinadores, setPatrocinadores] = useState<PatrocinadorResumen[]>([])
+  const [fpMap, setFpMap] = useState<Record<string, string>>({}) // cedula -> fp_public_url
   const [busqueda, setBusqueda] = useState('')
   const [loading, setLoading] = useState(true)
   const [patrocinadorAbierto, setPatrocinadorAbierto] = useState<string | null>(null)
@@ -71,6 +72,16 @@ export default function Dashboard() {
     const { data: zonasData } = await supabase.from('aportes').select('zona')
     const zonasUnicas = [...new Set((zonasData as any[] || []).map(r => r.zona as string))].sort()
     setZonas(zonasUnicas)
+
+    // Cargar FPs de patrocinadores (por nombre -> buscar cedula en aportes)
+    const { data: pats } = await supabase.from('patrocinadores').select('nombre, cedula, fp_public_url').not('fp_public_url', 'is', null)
+    const newFpMap: Record<string, string> = {}
+    for (const pat of (pats || [])) {
+      if (pat.cedula && pat.fp_public_url) newFpMap[pat.cedula] = pat.fp_public_url
+      // también indexar por nombre para match posterior
+      if (pat.nombre && pat.fp_public_url) newFpMap[`nombre:${pat.nombre.toUpperCase()}`] = pat.fp_public_url
+    }
+    setFpMap(newFpMap)
 
     const mapa: Record<string, PatrocinadorResumen> = {}
 
@@ -289,6 +300,19 @@ export default function Dashboard() {
 
                 {abierto && (
                   <div className="border-t border-gray-800 px-4 py-4 space-y-5">
+                    {/* Formato de Postulación */}
+                    {(() => {
+                      const fpUrl = fpMap[p.cedula] || fpMap[`nombre:${p.patrocinador.toUpperCase()}`]
+                      return fpUrl ? (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Formato de Postulación:</span>
+                          <a href={fpUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs underline">
+                            Ver FP <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      ) : null
+                    })()}
                     {/* Antecedentes */}
                     <div>
                       <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Investigaciones de Antecedentes</h3>
