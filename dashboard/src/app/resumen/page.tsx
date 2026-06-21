@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase, Aporte } from '@/lib/supabase'
-import { TrendingUp, ExternalLink, CheckCircle, XCircle, Clock, X } from 'lucide-react'
+import { TrendingUp, CheckCircle, XCircle, Clock, X, Users, FileText, DollarSign } from 'lucide-react'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -131,23 +131,43 @@ export default function ResumenPage() {
 
       {/* Tarjetas */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <div className="text-2xl font-bold text-white">{filas.length}</div>
-          <div className="text-xs text-gray-400 mt-1">Patrocinadores</div>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <div className="text-2xl font-bold text-white">{todos.length}</div>
-          <div className="text-xs text-gray-400 mt-1">Aportes en {añoSeleccionado}</div>
-        </div>
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-yellow-400">
-            {todos.filter(a => !a.estado || a.estado === 'pendiente').length}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5 text-gray-300" />
           </div>
-          <div className="text-xs text-yellow-400/70 mt-1">Pendientes de aval</div>
+          <div>
+            <div className="text-2xl font-bold text-white">{filas.length}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Patrocinadores</div>
+          </div>
         </div>
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-green-400">{fmt(totalGeneral)}</div>
-          <div className="text-xs text-green-400/70 mt-1">Total recaudado</div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-gray-300" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white">{todos.length}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Aportes en {añoSeleccionado}</div>
+          </div>
+        </div>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-yellow-400" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-yellow-400">
+              {todos.filter(a => !a.estado || a.estado === 'pendiente').length}
+            </div>
+            <div className="text-xs text-yellow-400/70 mt-0.5">Pendientes de aval</div>
+          </div>
+        </div>
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
+            <DollarSign className="w-5 h-5 text-green-400" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-green-400">{fmt(totalGeneral)}</div>
+            <div className="text-xs text-green-400/70 mt-0.5">Total recaudado</div>
+          </div>
         </div>
       </div>
 
@@ -237,8 +257,8 @@ export default function ResumenPage() {
                       </div>
                       {a.public_url && (
                         <a href={a.public_url} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 underline">
-                          Ver PDF <ExternalLink className="w-3 h-3" />
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all duration-200 cursor-pointer">
+                          <FileText className="w-3 h-3" /> Ver PDF
                         </a>
                       )}
                     </div>

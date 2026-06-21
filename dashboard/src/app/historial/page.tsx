@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { CheckCircle, XCircle, Clock, ExternalLink, ClipboardList } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, ClipboardList, FileText, DollarSign } from 'lucide-react'
 
 type RegistroAval = {
   id: string
@@ -77,21 +77,41 @@ export default function HistorialAval() {
 
       {/* Tarjetas */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-green-400">{totalAvalados}</div>
-          <div className="text-xs text-green-400/70 mt-1">Avalados</div>
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
+            <CheckCircle className="w-5 h-5 text-green-400" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-green-400">{totalAvalados}</div>
+            <div className="text-xs text-green-400/70 mt-0.5">Avalados</div>
+          </div>
         </div>
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-red-400">{totalRechazados}</div>
-          <div className="text-xs text-red-400/70 mt-1">Rechazados</div>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
+            <XCircle className="w-5 h-5 text-red-400" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-red-400">{totalRechazados}</div>
+            <div className="text-xs text-red-400/70 mt-0.5">Rechazados</div>
+          </div>
         </div>
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-yellow-400">{totalPendientes}</div>
-          <div className="text-xs text-yellow-400/70 mt-1">Pendientes</div>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-yellow-400" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-yellow-400">{totalPendientes}</div>
+            <div className="text-xs text-yellow-400/70 mt-0.5">Pendientes</div>
+          </div>
         </div>
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-          <div className="text-xl font-bold text-blue-400">${valorAvalado.toLocaleString('es-CO')}</div>
-          <div className="text-xs text-blue-400/70 mt-1">Valor avalado</div>
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+            <DollarSign className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <div className="text-xl font-bold text-blue-400">${valorAvalado.toLocaleString('es-CO')}</div>
+            <div className="text-xs text-blue-400/70 mt-0.5">Valor avalado</div>
+          </div>
         </div>
       </div>
 
@@ -165,8 +185,8 @@ export default function HistorialAval() {
                     <td className="px-3 py-3">
                       {r.public_url && (
                         <a href={r.public_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs underline">
-                          Ver <ExternalLink className="w-3 h-3" />
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all duration-200 cursor-pointer whitespace-nowrap">
+                          <FileText className="w-3 h-3" /> Ver PDF
                         </a>
                       )}
                     </td>

@@ -7,8 +7,9 @@ import {
   FUENTES, FUENTE_LABELS, STATUS_COLORS, STATUS_LABELS
 } from '@/lib/utils'
 import {
-  FileText, AlertTriangle, ExternalLink, Search, Plus,
-  Pencil, Trash2, CheckCircle, XCircle, Clock, MessageSquare, Send, Copy, Check
+  FileText, AlertTriangle, Search, Plus,
+  Pencil, Trash2, CheckCircle, XCircle, Clock, MessageSquare, Send, Copy, Check,
+  Users, ShieldAlert
 } from 'lucide-react'
 import AporteModal from '@/components/AporteModal'
 import AntecedenteModal from '@/components/AntecedenteModal'
@@ -241,23 +242,51 @@ export default function Dashboard() {
 
       {/* Tarjetas resumen */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <div className="text-2xl font-bold text-white">{patrocinadores.length}</div>
-          <div className="text-xs text-gray-400 mt-1">Patrocinadores</div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5 text-gray-300" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white">{patrocinadores.length}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Patrocinadores</div>
+          </div>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <div className="text-2xl font-bold text-white">{patrocinadores.reduce((a, p) => a + p.aportes.length, 0)}</div>
-          <div className="text-xs text-gray-400 mt-1">Aportes registrados</div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-gray-300" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white">{patrocinadores.reduce((a, p) => a + p.aportes.length, 0)}</div>
+            <div className="text-xs text-gray-400 mt-0.5">Aportes registrados</div>
+          </div>
         </div>
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-          <div className="text-2xl font-bold text-yellow-400">{totalPendientes}</div>
-          <div className="text-xs text-yellow-400/70 mt-1">Pendientes de aval</div>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-yellow-400" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-yellow-400">{totalPendientes}</div>
+            <div className="text-xs text-yellow-400/70 mt-0.5">Pendientes de aval</div>
+          </div>
+        </div>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-red-400" />
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-red-400">{totalVencidos}</div>
+            <div className="text-xs text-red-400/70 mt-0.5">Antecedentes vencidos</div>
+          </div>
         </div>
       </div>
 
       {/* Lista patrocinadores */}
       {loading ? (
-        <div className="text-center py-16 text-gray-500">Cargando datos...</div>
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl h-14 animate-pulse" />
+          ))}
+        </div>
       ) : filtrados.length === 0 ? (
         <div className="text-center py-16 text-gray-500">No se encontraron resultados.</div>
       ) : (
@@ -316,16 +345,16 @@ export default function Dashboard() {
                       const norm = (s: string) => s.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
                       const fpUrl = fpMap[p.cedula] || fpMap[norm(p.patrocinador)]
                       return (
-                        <div className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2.5">
                           <FileText className="w-4 h-4 text-blue-400 shrink-0" />
                           <span className="text-xs font-medium text-gray-300">Formato de Postulación</span>
                           {fpUrl ? (
                             <a href={fpUrl} target="_blank" rel="noopener noreferrer"
-                              className="ml-auto inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 underline shrink-0">
-                              Ver PDF <ExternalLink className="w-3 h-3" />
+                              className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all duration-200 cursor-pointer shrink-0">
+                              <FileText className="w-3 h-3" /> Ver PDF
                             </a>
                           ) : (
-                            <span className="ml-auto text-xs text-gray-600">Sin documento</span>
+                            <span className="ml-auto text-xs text-gray-600 italic">Sin documento</span>
                           )}
                         </div>
                       )
@@ -366,8 +395,8 @@ export default function Dashboard() {
                                     {dias !== null && dias >= 0 ? `Vence en ${dias}d` : dias !== null ? `Venció hace ${Math.abs(dias)}d` : ''}
                                   </div>
                                   <a href={ant.public_url} target="_blank" rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs mt-2 underline opacity-80 hover:opacity-100">
-                                    Ver PDF <ExternalLink className="w-3 h-3" />
+                                    className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 border border-white/15 hover:border-white/30 text-xs font-medium transition-all duration-200 cursor-pointer">
+                                    <FileText className="w-3 h-3" /> Ver PDF
                                   </a>
                                 </>
                               )}
@@ -413,8 +442,8 @@ export default function Dashboard() {
                                   {a.fecha_aporte && <span className="text-xs text-gray-500">{a.fecha_aporte}</span>}
                                   {a.public_url && (
                                     <a href={a.public_url} target="_blank" rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 underline">
-                                      Ver PDF <ExternalLink className="w-3 h-3" />
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all duration-200 cursor-pointer">
+                                      <FileText className="w-3 h-3" /> Ver PDF
                                     </a>
                                   )}
                                 </div>
