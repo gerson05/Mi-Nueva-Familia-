@@ -262,32 +262,46 @@ export default function ResumenPage() {
                         </a>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                      <div>
-                        <div className="text-xs text-gray-500">Valor</div>
-                        <div className="text-green-400 font-bold">${a.valor}</div>
+                    {(a.valor != null || a.metodo || a.banco || a.comprobante || a.fecha_aporte || a.cedula) && (
+                      <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                        {a.valor != null && (
+                          <div>
+                            <div className="text-xs text-gray-500">Valor</div>
+                            <div className="text-green-400 font-bold">${a.valor}</div>
+                          </div>
+                        )}
+                        {a.metodo && (
+                          <div>
+                            <div className="text-xs text-gray-500">Método</div>
+                            <div className="text-white">{a.metodo}</div>
+                          </div>
+                        )}
+                        {a.comprobante && (
+                          <div>
+                            <div className="text-xs text-gray-500">Comprobante</div>
+                            <div className="text-gray-300">{a.comprobante}</div>
+                          </div>
+                        )}
+                        {a.banco && (
+                          <div>
+                            <div className="text-xs text-gray-500">Banco</div>
+                            <div className="text-gray-300">{a.banco}</div>
+                          </div>
+                        )}
+                        {a.fecha_aporte && (
+                          <div>
+                            <div className="text-xs text-gray-500">Fecha aporte</div>
+                            <div className="text-gray-300">{a.fecha_aporte}</div>
+                          </div>
+                        )}
+                        {a.cedula && (
+                          <div>
+                            <div className="text-xs text-gray-500">Cédula</div>
+                            <div className="text-gray-300">{a.cedula}</div>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Método</div>
-                        <div className="text-white">{a.metodo || '—'}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Comprobante</div>
-                        <div className="text-gray-300">{a.comprobante || '—'}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Banco</div>
-                        <div className="text-gray-300">{a.banco || '—'}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Fecha aporte</div>
-                        <div className="text-gray-300">{a.fecha_aporte || '—'}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Cédula</div>
-                        <div className="text-gray-300">{a.cedula}</div>
-                      </div>
-                    </div>
+                    )}
                     {estado === 'rechazado' && a.comentario_revision && (
                       <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
                         <div className="text-xs text-red-400 font-medium mb-1">Motivo de rechazo:</div>

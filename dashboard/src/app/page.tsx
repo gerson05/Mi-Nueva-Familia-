@@ -435,7 +435,7 @@ export default function Dashboard() {
                                     <span className="text-xs font-semibold">{label}</span>
                                   </div>
                                   <span className="text-sm font-bold text-white">{a.mes} {a.año}</span>
-                                  <span className="text-sm font-bold text-green-400">${a.valor}</span>
+                                  {a.valor != null && <span className="text-sm font-bold text-green-400">${a.valor}</span>}
                                   {a.metodo && <span className="text-xs text-gray-300">{a.metodo}</span>}
                                   {a.banco && <span className="text-xs text-gray-400">{a.banco}</span>}
                                   {a.comprobante && <span className="text-xs text-gray-500">#{a.comprobante}</span>}

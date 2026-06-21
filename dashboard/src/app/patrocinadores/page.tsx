@@ -246,10 +246,12 @@ function PanelDetalle({ p, detalle, onReload }: {
                             {a.mes} {(a as any).año}
                           </td>
                           <td className="px-3 py-2 text-green-400 font-semibold">
-                            ${a.valor}
+                            {a.valor != null ? `$${a.valor}` : <span className="text-gray-700">—</span>}
                           </td>
                           <td className="px-3 py-2 text-gray-400">
-                            {a.metodo || '—'}{a.banco ? ` / ${a.banco}` : ''}
+                            {(a.metodo || a.banco)
+                              ? `${a.metodo || ''}${a.banco ? ` / ${a.banco}` : ''}`.trim().replace(/^\/\s*/, '')
+                              : <span className="text-gray-700">—</span>}
                           </td>
                           <td className="px-3 py-2">
                             <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${eStyle.cls}`}>
