@@ -246,34 +246,8 @@ export default function ResumenPage() {
               <button onClick={() => setDetalle(null)} className="text-gray-400 hover:text-white text-2xl leading-none"><X className="w-5 h-5" /></button>
             </div>
             <div className="px-6 py-4 space-y-2 max-h-[60vh] overflow-y-auto">
-              {detalle.aportes.map((a, idx) => {
+              {detalle.aportes.map(a => {
                 const estado = a.estado ?? 'pendiente'
-                const tieneMetadata = a.valor != null || a.metodo || a.banco || a.comprobante || a.fecha_aporte
-                // Aportes sin metadata (importados) → fila compacta
-                if (!tieneMetadata) {
-                  return (
-                    <div key={a.id} className="flex items-center justify-between gap-3 bg-gray-800/60 border border-gray-700/50 rounded-lg px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        {estado !== 'avalado' && (
-                          <>
-                            {ESTADO_ICON[estado]}
-                            <span className={`text-xs font-medium ${ESTADO_COLOR[estado]}`}>{ESTADO_LABEL[estado]}</span>
-                          </>
-                        )}
-                        <span className="text-xs text-gray-500">
-                          Comprobante {detalle.aportes.length > 1 ? `#${idx + 1}` : ''}
-                        </span>
-                      </div>
-                      {a.public_url ? (
-                        <a href={a.public_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all whitespace-nowrap">
-                          <FileText className="w-3 h-3" /> Ver PDF
-                        </a>
-                      ) : <span className="text-xs text-gray-700">Sin comprobante</span>}
-                    </div>
-                  )
-                }
-                // Aporte con metadata completa → card expandido
                 return (
                   <div key={a.id} className="bg-gray-800 rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -289,36 +263,30 @@ export default function ResumenPage() {
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                      {a.valor != null && (
-                        <div>
-                          <div className="text-xs text-gray-500">Valor</div>
-                          <div className="text-green-400 font-bold">${a.valor}</div>
-                        </div>
-                      )}
-                      {a.metodo && (
-                        <div>
-                          <div className="text-xs text-gray-500">Método</div>
-                          <div className="text-white">{a.metodo}</div>
-                        </div>
-                      )}
-                      {a.comprobante && (
-                        <div>
-                          <div className="text-xs text-gray-500">Comprobante</div>
-                          <div className="text-gray-300">{a.comprobante}</div>
-                        </div>
-                      )}
-                      {a.banco && (
-                        <div>
-                          <div className="text-xs text-gray-500">Banco</div>
-                          <div className="text-gray-300">{a.banco}</div>
-                        </div>
-                      )}
-                      {a.fecha_aporte && (
-                        <div>
-                          <div className="text-xs text-gray-500">Fecha aporte</div>
-                          <div className="text-gray-300">{a.fecha_aporte}</div>
-                        </div>
-                      )}
+                      <div>
+                        <div className="text-xs text-gray-500">Valor</div>
+                        <div className="text-green-400 font-bold">{a.valor != null ? `$${a.valor}` : '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Método</div>
+                        <div className="text-white">{a.metodo || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Comprobante</div>
+                        <div className="text-gray-300">{a.comprobante || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Banco</div>
+                        <div className="text-gray-300">{a.banco || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Fecha aporte</div>
+                        <div className="text-gray-300">{a.fecha_aporte || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Cédula</div>
+                        <div className="text-gray-300">{a.cedula || '—'}</div>
+                      </div>
                     </div>
                     {estado === 'rechazado' && a.comentario_revision && (
                       <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
