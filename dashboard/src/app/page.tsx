@@ -212,23 +212,23 @@ export default function Dashboard() {
             placeholder="Buscar patrocinador o cédula..."
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+            className="w-full pl-9 pr-4 py-2 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-700 rounded-lg text-sm text-slate-900 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-blue-500"
           />
         </div>
         <select
           value={zonaSeleccionada}
           onChange={e => setZonaSeleccionada(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+          className="bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-gray-100 focus:outline-none focus:border-blue-500"
         >
           <option value="todas">Todas las zonas</option>
           {zonas.map(z => <option key={z} value={z}>{z}</option>)}
         </select>
         <button
           onClick={() => setSoloPendientes(v => !v)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap border ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors whitespace-nowrap border cursor-pointer ${
             soloPendientes
-              ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/30'
-              : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-600'
+              ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+              : 'bg-white dark:bg-gray-900 border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:border-slate-400 dark:hover:border-gray-600'
           }`}>
           <Clock className="w-4 h-4" />
           {soloPendientes ? 'Solo pendientes' : 'Todos'}
@@ -242,55 +242,55 @@ export default function Dashboard() {
 
       {/* Tarjetas resumen */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5 text-gray-300" />
+        <div className="bg-violet-50 border border-violet-200 dark:bg-violet-500/15 dark:border-violet-500/30 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-500/25 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5 text-violet-600 dark:text-violet-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-white">{patrocinadores.length}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Patrocinadores</div>
+            <div className="text-2xl font-bold text-violet-900 dark:text-white">{patrocinadores.length}</div>
+            <div className="text-xs text-violet-600/80 dark:text-violet-400/70 mt-0.5">Patrocinadores</div>
           </div>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-gray-300" />
+        <div className="bg-slate-100 border border-slate-200 dark:bg-gray-900 dark:border-gray-800 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-slate-200 dark:bg-gray-800 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-slate-500 dark:text-gray-300" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-white">{patrocinadores.reduce((a, p) => a + p.aportes.length, 0)}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Aportes registrados</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{patrocinadores.reduce((a, p) => a + p.aportes.length, 0)}</div>
+            <div className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">Aportes registrados</div>
           </div>
         </div>
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-yellow-400" />
+        <div className="bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/25 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-yellow-400">{totalPendientes}</div>
-            <div className="text-xs text-yellow-400/70 mt-0.5">Pendientes de aval</div>
+            <div className="text-2xl font-bold text-amber-800 dark:text-amber-400">{totalPendientes}</div>
+            <div className="text-xs text-amber-700/80 dark:text-amber-400/70 mt-0.5">Pendientes de aval</div>
           </div>
         </div>
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
-            <ShieldAlert className="w-5 h-5 text-red-400" />
+        <div className="bg-red-50 border border-red-200 dark:bg-red-500/10 dark:border-red-500/25 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-red-600 dark:text-red-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-red-400">{totalVencidos}</div>
-            <div className="text-xs text-red-400/70 mt-0.5">Antecedentes vencidos</div>
+            <div className="text-2xl font-bold text-red-800 dark:text-red-400">{totalVencidos}</div>
+            <div className="text-xs text-red-700/80 dark:text-red-400/70 mt-0.5">Antecedentes vencidos</div>
           </div>
         </div>
       </div>
 
       {/* Lista patrocinadores */}
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl h-14 animate-pulse" />
+            <div key={i} className="bg-slate-100 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl h-14 animate-pulse" />
           ))}
         </div>
       ) : filtrados.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">No se encontraron resultados.</div>
+        <div className="text-center py-16 text-slate-400 dark:text-gray-500">No se encontraron resultados.</div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filtrados.map(p => {
             const abierto = patrocinadorAbierto === p.cedula
             const tieneAlerta = FUENTES.some(f => {
@@ -302,22 +302,22 @@ export default function Dashboard() {
             const ctx = { patrocinador: p.patrocinador, cedula: p.cedula, zona: p.zona }
 
             return (
-              <div key={p.cedula} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <div key={p.cedula} className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
                 <button
                   onClick={() => setPatrocinadorAbierto(abierto ? null : p.cedula)}
-                  className="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-800/50 transition-colors text-left"
+                  className="w-full flex items-center gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors text-left cursor-pointer"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white truncate">{p.patrocinador}</span>
-                      {tieneAlerta && <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />}
+                      <span className="font-medium text-slate-900 dark:text-white truncate">{p.patrocinador}</span>
+                      {tieneAlerta && <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-yellow-400 shrink-0" />}
                       {pendientes > 0 && (
-                        <span className="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded font-medium shrink-0">
+                        <span className="text-[10px] bg-amber-100 dark:bg-yellow-500/20 text-amber-700 dark:text-yellow-400 border border-amber-300 dark:border-yellow-500/30 px-1.5 py-0.5 rounded font-medium shrink-0">
                           {pendientes} pendiente{pendientes > 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-gray-400 mt-0.5">CC: {p.cedula} · {p.zona}</div>
+                    <div className="text-xs text-slate-400 dark:text-gray-400 mt-0.5">CC: {p.cedula} · {p.zona}</div>
                   </div>
                   <div className="flex gap-1 shrink-0">
                     {FUENTES.map(f => {
@@ -331,23 +331,23 @@ export default function Dashboard() {
                       )
                     })}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-gray-400 shrink-0">
+                  <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-gray-400 shrink-0">
                     <FileText className="w-3.5 h-3.5" />
                     {p.aportes.length}
                   </div>
-                  <span className="text-gray-600 text-xs">{abierto ? '▲' : '▼'}</span>
+                  <span className="text-slate-400 dark:text-gray-600 text-xs">{abierto ? '▲' : '▼'}</span>
                 </button>
 
                 {abierto && (
-                  <div className="border-t border-gray-800 px-4 py-4 space-y-5">
+                  <div className="border-t border-slate-100 dark:border-gray-800 px-4 py-4 space-y-5">
                     {/* Formato de Postulación */}
                     {(() => {
                       const norm = (s: string) => s.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
                       const fpUrl = fpMap[p.cedula] || fpMap[norm(p.patrocinador)]
                       return (
-                        <div className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2.5">
-                          <FileText className="w-4 h-4 text-blue-400 shrink-0" />
-                          <span className="text-xs font-medium text-gray-300">Formato de Postulación</span>
+                        <div className="flex items-center gap-3 bg-slate-50 dark:bg-gray-800/60 border border-slate-200 dark:border-gray-700 rounded-lg px-3 py-2.5">
+                          <FileText className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
+                          <span className="text-xs font-medium text-slate-700 dark:text-gray-300">Formato de Postulación</span>
                           {fpUrl ? (
                             <a href={fpUrl} target="_blank" rel="noopener noreferrer"
                               className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 text-xs font-medium transition-all duration-200 cursor-pointer shrink-0">
@@ -361,7 +361,7 @@ export default function Dashboard() {
                     })()}
                     {/* Antecedentes */}
                     <div>
-                      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Investigaciones de Antecedentes</h3>
+                      <h3 className="text-xs font-semibold text-slate-400 dark:text-gray-400 uppercase tracking-wider mb-2">Investigaciones de Antecedentes</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {FUENTES.map(f => {
                           const ant = p.antecedentes[f]

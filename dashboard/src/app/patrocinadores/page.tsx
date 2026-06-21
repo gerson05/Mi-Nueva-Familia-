@@ -472,40 +472,40 @@ export default function PatrocinadoresGestion() {
 
       {/* Tarjetas */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
-            <CheckCircle className="w-5 h-5 text-green-400" />
+        <div className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/25 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-green-400">{activos}</div>
-            <div className="text-xs text-green-400/70 mt-0.5">Activos</div>
+            <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-400">{activos}</div>
+            <div className="text-xs text-emerald-700/80 dark:text-emerald-400/70 mt-0.5">Activos</div>
           </div>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-            <XCircle className="w-5 h-5 text-gray-400" />
+        <div className="bg-slate-100 border border-slate-200 dark:bg-gray-900 dark:border-gray-800 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-slate-200 dark:bg-gray-800 flex items-center justify-center shrink-0">
+            <XCircle className="w-5 h-5 text-slate-400 dark:text-gray-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-400">{inactivos}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Inactivos</div>
+            <div className="text-2xl font-bold text-slate-600 dark:text-gray-400">{inactivos}</div>
+            <div className="text-xs text-slate-500 dark:text-gray-500 mt-0.5">Inactivos</div>
           </div>
         </div>
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-yellow-400" />
+        <div className="bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/25 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-yellow-400">{porVencer}</div>
-            <div className="text-xs text-yellow-400/70 mt-0.5">Por vencer</div>
+            <div className="text-2xl font-bold text-amber-800 dark:text-amber-400">{porVencer}</div>
+            <div className="text-xs text-amber-700/80 dark:text-amber-400/70 mt-0.5">Por vencer</div>
           </div>
         </div>
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-red-400" />
+        <div className="bg-red-50 border border-red-200 dark:bg-red-500/10 dark:border-red-500/25 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-red-600 dark:text-red-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-red-400">{vencidos}</div>
-            <div className="text-xs text-red-400/70 mt-0.5">Patrocinio vencido</div>
+            <div className="text-2xl font-bold text-red-800 dark:text-red-400">{vencidos}</div>
+            <div className="text-xs text-red-700/80 dark:text-red-400/70 mt-0.5">Patrocinio vencido</div>
           </div>
         </div>
       </div>
@@ -516,10 +516,10 @@ export default function PatrocinadoresGestion() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" placeholder="Buscar por nombre o cédula..."
             value={busqueda} onChange={e => { setBusqueda(e.target.value); setPagina(1) }}
-            className="w-full pl-9 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500" />
+            className="w-full pl-9 pr-4 py-2 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-700 rounded-lg text-sm text-slate-900 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-blue-500" />
         </div>
         <select value={filtroEstado} onChange={e => { setFiltroEstado(e.target.value as any); setPagina(1) }}
-          className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+          className="bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-gray-100 focus:outline-none focus:border-blue-500">
           <option value="todos">Todos</option>
           <option value="activo">Activos</option>
           <option value="inactivo">Inactivos</option>

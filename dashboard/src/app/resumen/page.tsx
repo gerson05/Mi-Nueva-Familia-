@@ -131,42 +131,42 @@ export default function ResumenPage() {
 
       {/* Tarjetas */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5 text-gray-300" />
+        <div className="bg-violet-50 border border-violet-200 dark:bg-violet-500/15 dark:border-violet-500/30 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-500/25 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5 text-violet-600 dark:text-violet-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-white">{filas.length}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Patrocinadores</div>
+            <div className="text-2xl font-bold text-violet-900 dark:text-white">{filas.length}</div>
+            <div className="text-xs text-violet-600/80 dark:text-violet-400/70 mt-0.5">Patrocinadores</div>
           </div>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-gray-300" />
+        <div className="bg-slate-100 border border-slate-200 dark:bg-gray-900 dark:border-gray-800 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-slate-200 dark:bg-gray-800 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-slate-500 dark:text-gray-300" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-white">{todos.length}</div>
-            <div className="text-xs text-gray-400 mt-0.5">Aportes en {añoSeleccionado}</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{todos.length}</div>
+            <div className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">Aportes en {añoSeleccionado}</div>
           </div>
         </div>
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-yellow-400" />
+        <div className="bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/25 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-yellow-400">
+            <div className="text-2xl font-bold text-amber-800 dark:text-amber-400">
               {todos.filter(a => !a.estado || a.estado === 'pendiente').length}
             </div>
-            <div className="text-xs text-yellow-400/70 mt-0.5">Pendientes de aval</div>
+            <div className="text-xs text-amber-700/80 dark:text-amber-400/70 mt-0.5">Pendientes de aval</div>
           </div>
         </div>
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
-            <DollarSign className="w-5 h-5 text-green-400" />
+        <div className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/25 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center shrink-0">
+            <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-green-400">{fmt(totalGeneral)}</div>
-            <div className="text-xs text-green-400/70 mt-0.5">Total recaudado</div>
+            <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-400">{fmt(totalGeneral)}</div>
+            <div className="text-xs text-emerald-700/80 dark:text-emerald-400/70 mt-0.5">Total recaudado</div>
           </div>
         </div>
       </div>
