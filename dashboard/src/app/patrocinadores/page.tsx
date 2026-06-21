@@ -408,6 +408,7 @@ export default function PatrocinadoresGestion() {
   const [filtroZona, setFiltroZona] = useState<string>('todas')
   const [zonas, setZonas] = useState<string[]>([])
   const [toggleLoading, setToggleLoading] = useState<string | null>(null)
+  const [confirmDesactivar, setConfirmDesactivar] = useState<{ p: Patrocinador; motivo: string } | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [detalles, setDetalles] = useState<Record<string, DetallePat>>({})
   const [detalleLoading, setDetalleLoading] = useState<string | null>(null)
@@ -452,10 +453,28 @@ export default function PatrocinadoresGestion() {
     setDetalleLoading(null)
   }
 
-  async function toggleEstado(p: Patrocinador) {
+  function handleToggleEstado(p: Patrocinador) {
+    if (p.estado === 'activo') {
+      setConfirmDesactivar({ p, motivo: '' })
+    } else {
+      ejecutarToggle(p, 'activar', '')
+    }
+  }
+
+  async function ejecutarToggle(p: Patrocinador, accion: 'activar' | 'desactivar', motivo: string) {
     setToggleLoading(p.id)
-    await supabase.from('patrocinadores').update({ estado: p.estado === 'activo' ? 'inactivo' : 'activo' }).eq('id', p.id)
+    const nuevoEstado = accion === 'activar' ? 'activo' : 'inactivo'
+    await supabase.from('patrocinadores').update({ estado: nuevoEstado }).eq('id', p.id)
+    await supabase.from('patrocinadores_audit').insert({
+      patrocinador_id: p.id,
+      patrocinador_nombre: p.nombre,
+      accion,
+      estado_anterior: p.estado,
+      estado_nuevo: nuevoEstado,
+      motivo: motivo || null,
+    })
     setToggleLoading(null)
+    setConfirmDesactivar(null)
     cargar()
   }
 
@@ -630,7 +649,7 @@ export default function PatrocinadoresGestion() {
                       </td>
                       <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
                         <button
-                          onClick={() => toggleEstado(p)}
+                          onClick={() => handleToggleEstado(p)}
                           disabled={toggleLoading === p.id}
                           className={`px-3 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-50 border ${
                             p.estado === 'activo'
@@ -716,6 +735,42 @@ export default function PatrocinadoresGestion() {
           </div>
         )}
         </>
+      )}
+
+      {/* Modal confirmar desactivar */}
+      {confirmDesactivar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setConfirmDesactivar(null)} />
+          <div className="relative bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-sm w-full shadow-2xl space-y-4">
+            <h3 className="text-base font-semibold text-white">¿Desactivar patrocinador?</h3>
+            <p className="text-sm text-gray-400">
+              <span className="text-white font-medium">{confirmDesactivar.p.nombre}</span> pasará a estado inactivo.
+              Esta acción queda registrada en auditoría.
+            </p>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Motivo (opcional)</label>
+              <textarea
+                value={confirmDesactivar.motivo}
+                onChange={e => setConfirmDesactivar(s => s ? { ...s, motivo: e.target.value } : null)}
+                placeholder="Ej: culminó período, no renueva..."
+                rows={2}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500 resize-none"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDesactivar(null)}
+                className="flex-1 px-4 py-2 bg-gray-800 text-gray-300 rounded-lg text-sm hover:bg-gray-700 transition-colors">
+                Cancelar
+              </button>
+              <button
+                onClick={() => ejecutarToggle(confirmDesactivar.p, 'desactivar', confirmDesactivar.motivo)}
+                disabled={toggleLoading === confirmDesactivar.p.id}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-500 disabled:opacity-50 transition-colors">
+                {toggleLoading === confirmDesactivar.p.id ? 'Guardando...' : 'Desactivar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
