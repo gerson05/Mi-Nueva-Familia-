@@ -254,11 +254,15 @@ export default function ResumenPage() {
                   return (
                     <div key={a.id} className="flex items-center justify-between gap-3 bg-gray-800/60 border border-gray-700/50 rounded-lg px-3 py-2">
                       <div className="flex items-center gap-2">
-                        {ESTADO_ICON[estado]}
-                        <span className={`text-xs font-medium ${ESTADO_COLOR[estado]}`}>{ESTADO_LABEL[estado]}</span>
-                        {detalle.aportes.length > 1 && (
-                          <span className="text-xs text-gray-600">#{idx + 1}</span>
+                        {estado !== 'avalado' && (
+                          <>
+                            {ESTADO_ICON[estado]}
+                            <span className={`text-xs font-medium ${ESTADO_COLOR[estado]}`}>{ESTADO_LABEL[estado]}</span>
+                          </>
                         )}
+                        <span className="text-xs text-gray-500">
+                          Comprobante {detalle.aportes.length > 1 ? `#${idx + 1}` : ''}
+                        </span>
                       </div>
                       {a.public_url ? (
                         <a href={a.public_url} target="_blank" rel="noopener noreferrer"
