@@ -153,8 +153,20 @@ function PanelDetalle({ p, detalle, onReload }: {
   const [fpLoading, setFpLoading] = useState(false)
   const [cedulaLoading, setCedulaLoading] = useState(false)
 
+  // Años disponibles en todos los aportes de este patrocinador
+  const añosDisponibles = [...new Set(
+    detalle.aportes.map(a => (a as any).año as string).filter(Boolean)
+  )].sort((a, b) => Number(b) - Number(a))
+
+  // Año del período actual para mostrar por defecto
+  const añoActual = p.fecha_fin_patrocinio
+    ? new Date(p.fecha_fin_patrocinio).getFullYear().toString()
+    : añosDisponibles[0] ?? new Date().getFullYear().toString()
+
+  const [añoVista, setAñoVista] = useState<string>(añoActual)
+
   const aportesPeriodo = detalle.aportes.filter(a =>
-    aporteEnPeriodo(a, p.fecha_inicio_patrocinio, p.fecha_fin_patrocinio)
+    (a as any).año === añoVista
   )
 
   const totalAportes = aportesPeriodo.reduce(
@@ -212,11 +224,23 @@ function PanelDetalle({ p, detalle, onReload }: {
         {/* ── CONSIGNACIONES ── */}
         {tab === 'consignaciones' && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">
-                Período: {fmtFecha(p.fecha_inicio_patrocinio)} → {fmtFecha(p.fecha_fin_patrocinio)}
-              </span>
-              <span className="text-sm font-semibold text-green-400">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Año:</span>
+                <div className="flex gap-1">
+                  {añosDisponibles.map(año => (
+                    <button key={año} onClick={() => setAñoVista(año)}
+                      className={`px-2.5 py-0.5 rounded text-xs font-medium transition-colors ${
+                        añoVista === año
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                      }`}>
+                      {año}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <span className="text-sm font-semibold text-green-400 shrink-0">
                 Total: ${totalAportes.toLocaleString('es-CO')}
               </span>
             </div>
