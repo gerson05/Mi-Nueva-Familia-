@@ -245,7 +245,7 @@ export default function ResumenPage() {
               </div>
               <button onClick={() => setDetalle(null)} className="text-gray-400 hover:text-white text-2xl leading-none"><X className="w-5 h-5" /></button>
             </div>
-            <div className="px-6 py-4 space-y-2">
+            <div className="px-6 py-4 space-y-2 max-h-[60vh] overflow-y-auto">
               {detalle.aportes.map((a, idx) => {
                 const estado = a.estado ?? 'pendiente'
                 const tieneMetadata = a.valor != null || a.metodo || a.banco || a.comprobante || a.fecha_aporte
